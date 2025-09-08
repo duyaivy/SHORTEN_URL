@@ -1,5 +1,6 @@
 import { type Collection, type Db, MongoClient } from "mongodb";
 import { env } from "@/common/utils/envConfig";
+import type { RefreshToken } from "../models/refreshToken.model";
 import type { User } from "../models/user.model";
 
 class DBService {
@@ -38,6 +39,9 @@ class DBService {
 
 	get users(): Collection<User> {
 		return this.db.collection(env.DB_USER_COLLECTION);
+	}
+	get refresh_tokens(): Collection<RefreshToken> {
+		return this.db.collection(env.DB_REFRESH_TOKEN_COLLECTION);
 	}
 }
 

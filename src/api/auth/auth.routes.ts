@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { validateRequest } from "@/common/utils/httpHandlers";
+import { validateRequest, wrapRequestHandler } from "@/common/utils/httpHandlers";
 import { authController } from "./auth.controller";
-import { RegisterSchema } from "./auth.validation";
+import { LoginSchema, RefreshTokenValidation, RegisterSchema } from "./auth.validation";
 
 const authRouter = Router();
 
@@ -9,17 +9,17 @@ const authRouter = Router();
  *
  * register
  * POST /auth/register
- * body: { username: string, password: string }
+ * body: { email: string, password: string }
  */
-authRouter.post("/register", validateRequest(RegisterSchema), authController.register);
+authRouter.post("/register", validateRequest(RegisterSchema), wrapRequestHandler(authController.register));
 
 /**
  *
  * login
  * POST /auth/login
- * body: { username: string, password: string }
+ * body: { email: string, password: string }
  */
-authRouter.post("/login", validateRequest(RegisterSchema), authController.login);
+authRouter.post("/login", validateRequest(LoginSchema), wrapRequestHandler(authController.login));
 
 /**
  *
@@ -27,6 +27,6 @@ authRouter.post("/login", validateRequest(RegisterSchema), authController.login)
  * POST /auth/refresh-token
  * body: { refresh_token: string }
  */
-authRouter.post("/refresh-token", authController.refreshToken);
+authRouter.post("/refresh-token", RefreshTokenValidation, wrapRequestHandler(authController.refreshToken));
 
 export { authRouter };

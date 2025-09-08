@@ -1,5 +1,5 @@
 import { createId } from "crypto-id";
-export const randomUsername = (name: string, email: string) => {
+export const randomUsername = (email: string, name?: string) => {
 	if (name) {
 		return name;
 	}

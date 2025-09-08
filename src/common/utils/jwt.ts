@@ -1,8 +1,8 @@
+import { StatusCodes } from "http-status-codes";
 import { type Algorithm, type JwtPayload, type Secret, type SignOptions, sign, verify } from "jsonwebtoken";
 import _ from "lodash";
-import type { StringValue } from "ms";
 import { ServiceResponse } from "../models/serviceResponse";
-import type { JWTError } from "../types/jwt.type";
+import type { JWTError, TokenPayLoad } from "../types/jwt.type";
 import { env } from "./envConfig";
 
 interface SignJWTParams {
@@ -11,16 +11,16 @@ interface SignJWTParams {
 	options?: SignOptions;
 }
 
-export const signJWT = ({
-	payload,
-	secretOrPrivateKey = env.SECRET_OR_PUBLIC_JWT_KEY,
-	options = {
-		algorithm: env.ALGORITHM_JWT as Algorithm,
-		expiresIn: env.EXP_TIME as StringValue,
-	},
-}: SignJWTParams): string => {
-	const token = sign(payload, secretOrPrivateKey, { algorithm: env.ALGORITHM_JWT as Algorithm, ...options });
-	return token;
+export const signJWT = ({ payload, secretOrPrivateKey = env.SECRET_OR_PUBLIC_JWT_KEY, options }: SignJWTParams) => {
+	return new Promise<string>((resolve, reject) => {
+		sign(payload, secretOrPrivateKey, { algorithm: env.ALGORITHM_JWT as Algorithm, ...options }, (err, token) => {
+			if (err) {
+				reject(ServiceResponse.failure(_.capitalize(err.message), null, StatusCodes.INTERNAL_SERVER_ERROR));
+			} else {
+				resolve(token as string);
+			}
+		});
+	});
 };
 export const verifyJWT = ({
 	token,
@@ -28,9 +28,9 @@ export const verifyJWT = ({
 }: {
 	token: string;
 	secretOrPublicKey?: Secret;
-}) => {
+}): TokenPayLoad => {
 	try {
-		return verify(token, secretOrPublicKey);
+		return verify(token, secretOrPublicKey) as TokenPayLoad;
 	} catch (err) {
 		throw ServiceResponse.failure(_.capitalize((err as JWTError).message), null, 401);
 	}

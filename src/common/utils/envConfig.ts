@@ -16,6 +16,7 @@ const envSchema = z.object({
 	DB_CONNECTION_STRING: z.string().url().min(1),
 	DB_NAME: z.string().min(1).default("Shorten_URL"),
 	DB_USER_COLLECTION: z.string().min(1).default("users"),
+	DB_REFRESH_TOKEN_COLLECTION: z.string().min(1).default("refresh_tokens"),
 	SECRET_OR_PUBLIC_JWT_KEY: z.string().min(1).default("your-secret-key"),
 	EXP_TIME: z.string().min(1).default("1h"),
 	ACCESS_TOKEN_EXPIRATION_TIME: z.string().min(1).default("15m"),
