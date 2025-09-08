@@ -2,31 +2,31 @@ import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
 export class ServiceResponse<T = null> {
+	readonly statusCode: number;
 	readonly success: boolean;
 	readonly message: string;
-	readonly responseObject: T;
-	readonly statusCode: number;
+	readonly data: T;
 
-	private constructor(success: boolean, message: string, responseObject: T, statusCode: number) {
+	private constructor(success: boolean, message: string, data: T, statusCode: number) {
+		this.statusCode = statusCode;
 		this.success = success;
 		this.message = message;
-		this.responseObject = responseObject;
-		this.statusCode = statusCode;
+		this.data = data;
 	}
 
-	static success<T>(message: string, responseObject: T, statusCode: number = StatusCodes.OK) {
-		return new ServiceResponse(true, message, responseObject, statusCode);
+	static success<T>(message: string, data: T, statusCode: number = StatusCodes.OK) {
+		return new ServiceResponse(true, message, data, statusCode);
 	}
 
-	static failure<T>(message: string, responseObject: T, statusCode: number = StatusCodes.BAD_REQUEST) {
-		return new ServiceResponse(false, message, responseObject, statusCode);
+	static failure<T>(message: string, data: T, statusCode: number = StatusCodes.BAD_REQUEST) {
+		return new ServiceResponse(false, message, data, statusCode);
 	}
 }
 
 export const ServiceResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
 	z.object({
 		success: z.boolean(),
-		message: z.string(),
-		responseObject: dataSchema.optional(),
 		statusCode: z.number(),
+		message: z.string(),
+		data: dataSchema.optional(),
 	});

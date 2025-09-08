@@ -1,10 +1,14 @@
 import { z } from "zod";
+import { MESSAGE } from "../constant/message.const";
 
+export const ObjectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId format");
 export const commonValidations = {
-	id: z
+	id: ObjectIdSchema,
+	email: z.string().email(MESSAGE.INVALID_EMAIL),
+	password: z
 		.string()
-		.refine((data) => !Number.isNaN(Number(data)), "ID must be a numeric value")
-		.transform(Number)
-		.refine((num) => num > 0, "ID must be a positive number"),
-	// ... other common validations
+		.min(6, MESSAGE.INVALID_PASSWORD)
+		.max(100, MESSAGE.INVALID_PASSWORD)
+		.regex(/^(?=.*[0-9])(?=.*[!@#$%^&*])/, MESSAGE.INVALID_PASSWORD),
+	username: z.string().min(3, MESSAGE.USERNAME_REQUIRED).max(50, MESSAGE.USERNAME_MAX_LENGTH),
 };

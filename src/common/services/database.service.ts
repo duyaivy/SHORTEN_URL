@@ -1,6 +1,6 @@
 import { type Collection, type Db, MongoClient } from "mongodb";
 import { env } from "@/common/utils/envConfig";
-import type { User } from "../models/user.modal";
+import type { User } from "../models/user.model";
 
 class DBService {
 	private client: MongoClient;
