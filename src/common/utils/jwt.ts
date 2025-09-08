@@ -28,10 +28,19 @@ export const verifyJWT = ({
 }: {
 	token: string;
 	secretOrPublicKey?: Secret;
-}): TokenPayLoad => {
-	try {
-		return verify(token, secretOrPublicKey) as TokenPayLoad;
-	} catch (err) {
-		throw ServiceResponse.failure(_.capitalize((err as JWTError).message), null, 401);
-	}
+}) => {
+	// try {
+	// 	return verify(token, secretOrPublicKey) as TokenPayLoad;
+	// } catch (err) {
+	// 	throw ServiceResponse.failure(_.capitalize((err as JWTError).message), null, 401);
+	// }
+	return new Promise<TokenPayLoad>((resolve, reject) => {
+		verify(token, secretOrPublicKey, (err, decoded) => {
+			if (err) {
+				reject(ServiceResponse.failure(_.capitalize((err as JWTError).message), null, StatusCodes.UNAUTHORIZED));
+			} else {
+				resolve(decoded as TokenPayLoad);
+			}
+		});
+	});
 };

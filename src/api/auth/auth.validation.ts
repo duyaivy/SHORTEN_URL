@@ -19,23 +19,23 @@ export const RefreshTokenSchema = z.object({
 		refresh_token: z.string().min(1, MESSAGE.REFRESH_TOKEN_REQUIRED),
 	}),
 });
-export const AccessTokenValidation = (req: Request, _res: Response, next: NextFunction) => {
+export const AccessTokenValidation = async (req: Request, _res: Response, next: NextFunction) => {
 	// Bearer <token>
 	const access_token = req.headers["authorization"]?.split(" ")[1];
 	if (!access_token) {
 		next(ServiceResponse.failure(MESSAGE.ACCESS_TOKEN_REQUIRED, null, StatusCodes.UNAUTHORIZED));
 	}
-	const jwtPayload = authService.verifyAccessToken(access_token as string);
+	const jwtPayload = await authService.verifyAccessToken(access_token as string);
 	req.decode_token_payload = jwtPayload;
 	next();
 };
-export const RefreshTokenValidation = (
+export const RefreshTokenValidation = async (
 	req: Request<any, any, RefreshTokenRequest>,
 	_res: Response,
 	next: NextFunction,
 ) => {
 	const refresh_token = req.body.refresh_token;
-	const jwtPayload = authService.verifyRefreshToken(refresh_token);
+	const jwtPayload = await authService.verifyRefreshToken(refresh_token);
 	req.decode_token_payload = jwtPayload;
 	next();
 };

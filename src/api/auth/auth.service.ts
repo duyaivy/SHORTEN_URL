@@ -46,7 +46,7 @@ class AuthService {
 		const payload = exp ? { userId, type: JWTType.REFRESH_TOKEN, exp } : { userId, type: JWTType.REFRESH_TOKEN };
 		const token = await signJWT({ payload, options, secretOrPrivateKey });
 		// decode & save to db
-		const { iat, exp: expTime } = this.verifyRefreshToken(token);
+		const { iat, exp: expTime } = await this.verifyRefreshToken(token);
 		await databaseService.refresh_tokens.insertOne(
 			new RefreshToken({
 				user_id: userId.toString(),
@@ -66,12 +66,12 @@ class AuthService {
 		const refresh_token = await this.signRefreshToken({ userId: user._id });
 		return { access_token, refresh_token };
 	}
-	verifyAccessToken(token: string): TokenPayLoad {
-		const decoded = verifyJWT({ token, secretOrPublicKey: env.PRIVATE_ACCESS_TOKEN_KEY });
+	async verifyAccessToken(token: string): Promise<TokenPayLoad> {
+		const decoded = await verifyJWT({ token, secretOrPublicKey: env.PRIVATE_ACCESS_TOKEN_KEY });
 		return decoded;
 	}
-	verifyRefreshToken(token: string): TokenPayLoad {
-		const decoded = verifyJWT({ token, secretOrPublicKey: env.PRIVATE_REFRESH_TOKEN_KEY });
+	async verifyRefreshToken(token: string): Promise<TokenPayLoad> {
+		const decoded = await verifyJWT({ token, secretOrPublicKey: env.PRIVATE_REFRESH_TOKEN_KEY });
 		return decoded;
 	}
 	async refreshToken({ payload, token }: { payload: TokenPayLoad; token: string }) {
