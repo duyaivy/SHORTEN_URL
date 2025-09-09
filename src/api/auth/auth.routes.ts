@@ -1,7 +1,13 @@
 import { Router } from "express";
 import { validateRequest, wrapRequestHandler } from "@/common/utils/httpHandlers";
 import { authController } from "./auth.controller";
-import { LoginSchema, RefreshTokenValidation, RegisterSchema } from "./auth.validation";
+import {
+	ForgotPasswordSchema,
+	LoginSchema,
+	RefreshTokenValidation,
+	RegisterSchema,
+	ResetPasswordSchema,
+} from "./auth.validation";
 
 const authRouter = Router();
 
@@ -28,5 +34,27 @@ authRouter.post("/login", validateRequest(LoginSchema), wrapRequestHandler(authC
  * body: { refresh_token: string }
  */
 authRouter.post("/refresh-token", RefreshTokenValidation, wrapRequestHandler(authController.refreshToken));
+/**
+ *
+ * forgot-password
+ * GET /auth/forgot-password
+ * params: { email: string }
+ */
+authRouter.get(
+	"/forgot-password",
+	validateRequest(ForgotPasswordSchema),
+	wrapRequestHandler(authController.forgotPassword),
+);
+/**
+ *
+ * reset-password
+ * POST /auth/reset-password
+ * params: { email: string }
+ */
+authRouter.post(
+	"/reset-password",
+	validateRequest(ResetPasswordSchema),
+	wrapRequestHandler(authController.resetPassword),
+);
 
 export { authRouter };

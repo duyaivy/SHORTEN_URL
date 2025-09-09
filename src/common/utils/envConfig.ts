@@ -24,6 +24,12 @@ const envSchema = z.object({
 	ALGORITHM_JWT: z.enum(["HS256", "HS384", "HS512"]).default("HS256"),
 	PRIVATE_ACCESS_TOKEN_KEY: z.string().min(1).default("your-private-access-token-key"),
 	PRIVATE_REFRESH_TOKEN_KEY: z.string().min(1).default("your-private-refresh-token-key"),
+	EMAIL_HOST: z.string().min(1).default("smtp.gmail.com"),
+	EMAIL_PORT: z.coerce.number().int().positive(),
+	EMAIL_USER: z.string().min(1).email().default("your-email@example.com"),
+	EMAIL_PASSWORD: z.string().min(1).default("your-email-password"),
+	CLIENT_URL: z.string().url().min(1).default("http://localhost:3000"),
+	PRIVATE_PASSWORD: z.string().min(1).default("your-private-password"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

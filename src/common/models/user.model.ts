@@ -31,3 +31,7 @@ export interface RegisterRequest {
 	email: string;
 	password: string;
 }
+export interface ResetPasswordRequest {
+	password: string;
+	token: string;
+}

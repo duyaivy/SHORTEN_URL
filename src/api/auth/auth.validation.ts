@@ -14,6 +14,17 @@ export const RegisterSchema = z.object({
 	}),
 });
 export const LoginSchema = RegisterSchema;
+export const ForgotPasswordSchema = z.object({
+	query: z.object({
+		email: commonValidations.email,
+	}),
+});
+export const ResetPasswordSchema = z.object({
+	body: z.object({
+		password: commonValidations.password,
+		token: z.string().min(1, MESSAGE.TOKEN_REQUIRED),
+	}),
+});
 export const RefreshTokenSchema = z.object({
 	body: z.object({
 		refresh_token: z.string().min(1, MESSAGE.REFRESH_TOKEN_REQUIRED),
