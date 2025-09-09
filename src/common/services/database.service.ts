@@ -1,7 +1,7 @@
 import { type Collection, type Db, MongoClient } from "mongodb";
 import { env } from "@/common/utils/envConfig";
+import type { User } from "../../api/user/user.model";
 import type { RefreshToken } from "../models/refreshToken.model";
-import type { User } from "../models/user.model";
 
 class DBService {
 	private client: MongoClient;

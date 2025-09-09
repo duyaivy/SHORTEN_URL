@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validateRequest, wrapRequestHandler } from "@/common/utils/httpHandlers";
 import { authController } from "./auth.controller";
 import {
+	AccessTokenValidation,
 	ForgotPasswordSchema,
 	LoginSchema,
 	RefreshTokenValidation,
@@ -46,7 +47,6 @@ authRouter.get(
 	wrapRequestHandler(authController.forgotPassword),
 );
 /**
- *
  * reset-password
  * POST /auth/reset-password
  * params: { email: string }
@@ -56,5 +56,10 @@ authRouter.post(
 	validateRequest(ResetPasswordSchema),
 	wrapRequestHandler(authController.resetPassword),
 );
-
+/**
+ * reset-password
+ * POST /auth/reset-password
+ * params: { email: string }
+ */
+authRouter.delete("/logout", AccessTokenValidation, RefreshTokenValidation, wrapRequestHandler(authController.logout));
 export { authRouter };

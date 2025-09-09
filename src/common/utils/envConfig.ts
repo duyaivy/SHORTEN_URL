@@ -30,6 +30,9 @@ const envSchema = z.object({
 	EMAIL_PASSWORD: z.string().min(1).default("your-email-password"),
 	CLIENT_URL: z.string().url().min(1).default("http://localhost:3000"),
 	PRIVATE_PASSWORD: z.string().min(1).default("your-private-password"),
+	GOOGLE_CLIENT_ID: z.string().min(1).default("your-google-client-id"),
+	GOOGLE_CLIENT_SECRET: z.string().min(1).default("your-google-client-secret"),
+	GOOGLE_REDIRECT_URI: z.string().url().min(1).default("http://localhost:8080/api/v1/auth/google/callback"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

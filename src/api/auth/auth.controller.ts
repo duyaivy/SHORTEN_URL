@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
+import type { RegisterRequest, ResetPasswordRequest } from "@/api/user/user.model";
 import { AUTH_MESSAGES } from "@/common/constant/message.const";
+import type { RefreshTokenRequest } from "@/common/models/refreshToken.model";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import type { RegisterRequest, ResetPasswordRequest } from "@/common/models/user.model";
 import type { TokenPayLoad } from "@/common/types/jwt.type";
 import { authService } from "./auth.service";
 
@@ -30,6 +31,12 @@ class AuthController {
 	resetPassword = async (req: Request<any, any, ResetPasswordRequest>, res: Response, _next: NextFunction) => {
 		await authService.resetPassword(req.body);
 		res.send(ServiceResponse.success(AUTH_MESSAGES.RESET_PASSWORD_SUCCESS, null));
+	};
+	logout = async (req: Request<any, any, RefreshTokenRequest>, res: Response, _next: NextFunction) => {
+		const userId = (req.decode_token_payload as TokenPayLoad).userId as string;
+		const refreshToken = req.body.refresh_token;
+		await authService.logout({ userId, refreshToken });
+		res.send(ServiceResponse.success(AUTH_MESSAGES.LOGOUT_SUCCESS, null));
 	};
 }
 export const authController = new AuthController();

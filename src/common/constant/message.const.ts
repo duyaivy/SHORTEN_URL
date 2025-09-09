@@ -6,6 +6,10 @@ export const AUTH_MESSAGES = {
 	REFRESH_TOKEN_SUCCESS: "Làm mới token thành công",
 	FORGOT_PASSWORD_SUCCESS: "Đã gửi email đặt lại mật khẩu",
 	RESET_PASSWORD_SUCCESS: "Đặt lại mật khẩu thành công",
+	FAILED_TO_FETCH_GOOGLE_TOKEN: "Không thể lấy token từ Google",
+	EMAIL_NOT_VERIFIED: "Email chưa được xác minh",
+	LOGOUT_SUCCESS: "Đăng xuất thành công",
+	INVALID_REFRESH_TOKEN: "Refresh token không hợp lệ",
 };
 export const MESSAGE = {
 	NOT_FOUND: "Không tìm thấy",

@@ -5,3 +5,6 @@ export const randomUsername = (email: string, name?: string) => {
 	}
 	return email.substring(0, 5) + createId(6);
 };
+export const randomPassword = () => {
+	return createId(8);
+};

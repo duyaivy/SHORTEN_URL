@@ -1,12 +1,11 @@
 import { StatusCodes } from "http-status-codes";
-import { has } from "lodash";
 import { ObjectId } from "mongodb";
 import type { StringValue } from "ms";
+import { type RegisterRequest, type ResetPasswordRequest, User } from "@/api/user/user.model";
 import { JWTType } from "@/common/constant/enums.const";
 import { AUTH_MESSAGES } from "@/common/constant/message.const";
 import { RefreshToken } from "@/common/models/refreshToken.model";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { type RegisterRequest, type ResetPasswordRequest, User } from "@/common/models/user.model";
 import databaseService from "@/common/services/database.service";
 import type { TokenPayLoad } from "@/common/types/jwt.type";
 import { sendForgotPassword, sendResetPasswordEmail } from "@/common/utils/email";
@@ -103,10 +102,23 @@ class AuthService {
 			throw ServiceResponse.failure(AUTH_MESSAGES.USER_NOT_FOUND, null, StatusCodes.NOT_FOUND);
 		}
 		await Promise.all([
-			databaseService.users.updateOne({ _id: user._id }, { $set: { password: hashPassword(password) } }),
+			databaseService.users.updateOne(
+				{ _id: user._id },
+				{ $set: { password: hashPassword(password) }, $currentDate: { updated_at: true } },
+			),
 			databaseService.refresh_tokens.deleteMany({ user_id: new ObjectId(user._id) }),
 		]);
-		await sendResetPasswordEmail(user.email);
+		sendResetPasswordEmail(user.email);
+		return;
+	}
+	async logout({ userId, refreshToken }: { userId: string; refreshToken: string }) {
+		const data = await databaseService.refresh_tokens.findOneAndDelete({
+			user_id: new ObjectId(userId),
+			token: refreshToken,
+		});
+		if (!data) {
+			throw ServiceResponse.failure(AUTH_MESSAGES.INVALID_REFRESH_TOKEN, null, StatusCodes.BAD_REQUEST);
+		}
 		return;
 	}
 }
