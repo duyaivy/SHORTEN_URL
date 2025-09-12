@@ -1,4 +1,5 @@
 import { type Collection, type Db, MongoClient } from "mongodb";
+import type { URL } from "@/api/url/url.model";
 import { env } from "@/common/utils/envConfig";
 import type { User } from "../../api/user/user.model";
 import type { RefreshToken } from "../models/refreshToken.model";
@@ -36,12 +37,36 @@ class DBService {
 			console.log("Error creating user indexes:", error);
 		}
 	}
+	async indexURL() {
+		try {
+			const existIndex = await this.urls.indexExists([
+				"alias_1_is_active_1",
+				"alias_1_is_active_1_password_1",
+				"owner_id_1",
+			]);
+			if (existIndex) {
+				console.log("URL indexes already exist");
+			} else {
+				await Promise.all([
+					this.urls.createIndex({ alias: 1, is_active: 1 }, { unique: true }),
+					this.urls.createIndex({ alias: 1, is_active: 1, password: 1 }, { unique: true }),
+					this.urls.createIndex({ owner_id: 1 }, { unique: true }),
+				]);
+				console.log("URL indexes created successfully");
+			}
+		} catch (error) {
+			console.log("Error creating URL indexes:", error);
+		}
+	}
 
 	get users(): Collection<User> {
 		return this.db.collection(env.DB_USER_COLLECTION);
 	}
 	get refresh_tokens(): Collection<RefreshToken> {
 		return this.db.collection(env.DB_REFRESH_TOKEN_COLLECTION);
+	}
+	get urls(): Collection<URL> {
+		return this.db.collection(env.DB_URL_COLLECTION);
 	}
 }
 

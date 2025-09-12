@@ -5,11 +5,8 @@ dotenv.config();
 
 const envSchema = z.object({
 	NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
-
 	HOST: z.string().min(1).default("localhost"),
-
 	PORT: z.coerce.number().int().positive().default(8080),
-
 	CORS_ORIGIN: z.string().url().default("http://localhost:8080"),
 	COMMON_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(1000),
 	COMMON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(1000),
@@ -33,6 +30,12 @@ const envSchema = z.object({
 	GOOGLE_CLIENT_ID: z.string().min(1).default("your-google-client-id"),
 	GOOGLE_CLIENT_SECRET: z.string().min(1).default("your-google-client-secret"),
 	GOOGLE_REDIRECT_URI: z.string().url().min(1).default("http://localhost:8080/api/v1/auth/google/callback"),
+	DB_URL_COLLECTION: z.string().min(1).default("urls"),
+	AWS_REGION: z.string().min(1).default("your-aws-region"),
+	AWS_ACCESS_KEY_ID: z.string().min(1).default("your-aws-access-key-id"),
+	AWS_SECRET_ACCESS_KEY: z.string().min(1).default("your-aws-secret-access-key"),
+	AWS_BUCKET_NAME: z.string().min(1).default("your-aws-bucket-name"),
+	CLIENT_SHORT_LINK: z.string().url().min(1).default("http://localhost:3000"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

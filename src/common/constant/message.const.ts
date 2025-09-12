@@ -26,3 +26,10 @@ export const MESSAGE = {
 	FORBIDDEN: "Truy cập bị cấm",
 	TOKEN_REQUIRED: "Token không được để trống",
 };
+export const URL_MESSAGES = {
+	INVALID_URL: "URL không hợp lệ",
+	CREATE_QR_CODE_FAILED: "Tạo mã QR thất bại",
+	URL_NOT_FOUND: "Không tìm thấy URL",
+	CREATE_SHORT_URL_SUCCESS: "Tạo URL rút gọn thành công",
+	URL_NOT_FOUND_OR_INCORRECT_PASSWORD: "Không tìm thấy URL hoặc mật khẩu không chính xác",
+};

@@ -50,3 +50,15 @@ export const RefreshTokenValidation = async (
 	req.decode_token_payload = jwtPayload;
 	next();
 };
+
+export const isLoggedInValidator = (
+	middleWares: (request: Request, response: Response, nextFunction: NextFunction) => void,
+) => {
+	return (req: Request, res: Response, next: NextFunction) => {
+		// neu co thi chay
+		if (req.headers.authorization) {
+			return middleWares(req, res, next);
+		}
+		next();
+	};
+};

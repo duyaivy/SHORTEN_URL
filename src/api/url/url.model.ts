@@ -1,0 +1,44 @@
+import { ObjectId } from "mongodb";
+
+interface UrlType {
+	_id?: ObjectId;
+	owner_id: ObjectId | null;
+	url: string;
+	views: number;
+	alias: string;
+	password: string | null;
+	is_active: boolean;
+	qr_code: string;
+	created_at?: Date;
+	updated_at?: Date;
+}
+export class URL {
+	_id?: ObjectId;
+	owner_id: ObjectId | null;
+	url: string;
+	views: number;
+	alias: string;
+	password: string | null;
+	is_active: boolean;
+	qr_code: string;
+	created_at: Date;
+	updated_at: Date;
+	constructor({ _id, owner_id, url, views, alias, password, is_active, qr_code, created_at, updated_at }: UrlType) {
+		const date = new Date();
+		this._id = new ObjectId(_id);
+		this.owner_id = owner_id ? new ObjectId(owner_id) : null;
+		this.url = url;
+		this.views = views;
+		this.alias = alias;
+		this.password = password;
+		this.is_active = is_active;
+		this.qr_code = qr_code;
+		this.created_at = created_at ? new Date(created_at) : date;
+		this.updated_at = updated_at ? new Date(updated_at) : date;
+	}
+}
+export interface CreateShortUrlRequest {
+	url: string;
+	alias: string;
+	password?: string;
+}
