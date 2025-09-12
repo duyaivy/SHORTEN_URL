@@ -1,4 +1,4 @@
-import { S3 } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, S3 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import fs from "fs";
 import { env } from "./envConfig";
@@ -31,4 +31,12 @@ export const uploadFileS3 = ({
 	});
 
 	return parallelUploads3.done();
+};
+export const deleteFileS3 = (filename: string) => {
+	return s3.send(
+		new DeleteObjectCommand({
+			Bucket: env.AWS_BUCKET_NAME,
+			Key: filename,
+		}),
+	);
 };

@@ -2,7 +2,14 @@ import { Router } from "express";
 import { validateRequest, wrapRequestHandler } from "@/common/utils/httpHandlers";
 import { AccessTokenValidation, isLoggedInValidator } from "../auth/auth.validation";
 import { urlController } from "./url.controller";
-import { createShortUrlSchema, getShortUrlSchema } from "./url.validation";
+import {
+	createShortUrlSchema,
+	deleteURLsSchema,
+	getShortUrlSchema,
+	paginationSchema,
+	updateUrlActiveSchema,
+	updateUrlSchema,
+} from "./url.validation";
 
 const urlRouter = Router();
 
@@ -32,6 +39,50 @@ urlRouter.post(
 	"/:alias",
 	validateRequest(getShortUrlSchema),
 	wrapRequestHandler(urlController.getShortUrlWithPassword),
+);
+/**
+ * get url has password
+ * POST /
+ * params: { alias: string }
+ */
+urlRouter.delete(
+	"/my-urls",
+	validateRequest(deleteURLsSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.deleteURLs),
+);
+/**
+ * update URL
+ * PATCH
+ * body: { alias: string, url?: string, password?: string, is_active?: boolean }
+ */
+urlRouter.patch(
+	"/:alias",
+	validateRequest(updateUrlSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.updateUrl),
+);
+/**
+ * update URL
+ * PATCH /
+ * body: { alias: string }
+ */
+urlRouter.patch(
+	"/my-urls/active",
+	validateRequest(updateUrlActiveSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.updateUrlActive),
+);
+/**
+ * get my URLs
+ * GET /
+ * query: { limit: number, page: number }
+ */
+urlRouter.get(
+	"/my-urls/get",
+	validateRequest(paginationSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.getMyURLs),
 );
 
 export { urlRouter };

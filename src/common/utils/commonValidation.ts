@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { MESSAGE } from "../constant/message.const";
 
-export const ObjectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId format");
+export const ObjectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, MESSAGE.INVALID_ID);
 export const commonValidations = {
 	id: ObjectIdSchema,
 	email: z.string().email(MESSAGE.INVALID_EMAIL),

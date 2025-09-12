@@ -15,8 +15,8 @@ interface UrlType {
 export class URL {
 	_id?: ObjectId;
 	owner_id: ObjectId | null;
-	url: string;
 	views: number;
+	url: string;
 	alias: string;
 	password: string | null;
 	is_active: boolean;
@@ -41,4 +41,18 @@ export interface CreateShortUrlRequest {
 	url: string;
 	alias: string;
 	password?: string;
+}
+export interface DeleteURLsRequest {
+	ids: string[];
+}
+export interface GetURLPasswordRequest {
+	alias: string;
+	password: string;
+}
+export interface UpdateUrlRequest extends Partial<CreateShortUrlRequest> {
+	is_active?: boolean;
+}
+export interface URLMini {
+	_id: string;
+	is_active: boolean;
 }

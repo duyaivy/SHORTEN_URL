@@ -25,6 +25,10 @@ export const MESSAGE = {
 	UNAUTHORIZED: "Truy cập không được phép",
 	FORBIDDEN: "Truy cập bị cấm",
 	TOKEN_REQUIRED: "Token không được để trống",
+	LIMIT_MAX: "Gía trị tối đa là 100",
+	LIMIT_MIN: "Gía trị tối thiểu là 1",
+	IS_BOOLEAN: "Gía trị phải là kiểu boolean",
+	INVALID_ID: "ID không hợp lệ",
 };
 export const URL_MESSAGES = {
 	INVALID_URL: "URL không hợp lệ",
@@ -32,4 +36,8 @@ export const URL_MESSAGES = {
 	URL_NOT_FOUND: "Không tìm thấy URL",
 	CREATE_SHORT_URL_SUCCESS: "Tạo URL rút gọn thành công",
 	URL_NOT_FOUND_OR_INCORRECT_PASSWORD: "Không tìm thấy URL hoặc mật khẩu không chính xác",
+	IDS_REQUIRED: "Danh sách URL không được để trống",
+	DELETE_URLS_SUCCESS: "Xóa URLs thành công",
+	UPDATE_URL_SUCCESS: "Cập nhật URL thành công",
+	ALIAS_ALREADY_EXISTS: "Alias đã tồn tại",
 };
