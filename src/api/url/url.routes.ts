@@ -11,7 +11,7 @@ import {
 	updateUrlSchema,
 } from "./url.validation";
 
-const urlRouter = Router();
+const urlRouter: Router = Router();
 
 /**
  * create short url

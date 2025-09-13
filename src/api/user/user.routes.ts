@@ -3,7 +3,7 @@ import { wrapRequestHandler } from "@/common/utils/httpHandlers";
 import { AccessTokenValidation } from "../auth/auth.validation";
 import { userController } from "./user.controller";
 
-const userRouter = Router();
+const userRouter: Router = Router();
 
 /**
  *

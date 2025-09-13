@@ -10,7 +10,7 @@ import {
 	ResetPasswordSchema,
 } from "./auth.validation";
 
-const authRouter = Router();
+const authRouter: Router = Router();
 
 /**
  *
