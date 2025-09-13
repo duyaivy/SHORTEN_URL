@@ -2,3 +2,5 @@ export const DEFAULT_AVATAR_URL = "https://www.gravatar.com/avatar/0000000000000
 export const PATH_IMAGES = "images";
 export const WIDTH_QR_CODE = 800;
 export const MAX_UPLOAD_SIZE = 52 * 1024 * 1024; // 2MB
+export const DEFAULT_LIMIT = 15;
+export const DEFAULT_PAGE = 1;

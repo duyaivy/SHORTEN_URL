@@ -2,6 +2,7 @@ import type { CompleteMultipartUploadCommandOutput } from "@aws-sdk/client-s3";
 import { StatusCodes } from "http-status-codes";
 import { omit } from "lodash";
 import { ObjectId } from "mongodb";
+import { DEFAULT_LIMIT, DEFAULT_PAGE } from "@/common/constant/common.const";
 import { URL_MESSAGES } from "@/common/constant/message.const";
 import type { PaginationRequest } from "@/common/models/common.model";
 import { ServiceResponse } from "@/common/models/serviceResponse";
@@ -146,22 +147,24 @@ class UrlService {
 		return;
 	}
 	async getMyURLs({ limit, page }: PaginationRequest, user_id: string) {
-		const skip = (page - 1) * limit;
+		const limitNumber = Number(limit) || DEFAULT_LIMIT;
+		const pageNumber = Number(page) || DEFAULT_PAGE;
+		const skip = (pageNumber - 1) * limitNumber;
 		const [data, totalDocument] = await Promise.all([
 			databaseService.urls
 				.find({
 					owner_id: new ObjectId(user_id),
 				})
 				.skip(skip)
-				.limit(limit)
+				.limit(limitNumber)
 				.toArray(),
 			databaseService.urls.countDocuments({ owner_id: new ObjectId(user_id) }),
 		]);
 		return {
 			control: {
-				total: Math.floor(totalDocument / limit),
-				page,
-				limit,
+				total: Math.ceil(totalDocument / limitNumber),
+				page: pageNumber,
+				limit: limitNumber,
 			},
 			data: data.map((item) => {
 				return { ...item, password: undefined };

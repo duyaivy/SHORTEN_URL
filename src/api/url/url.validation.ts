@@ -40,7 +40,7 @@ export const updateUrlActiveSchema = z.object({
 });
 export const paginationSchema = z.object({
 	query: z.object({
-		limit: z.number().min(1, MESSAGE.LIMIT_MIN).max(100, MESSAGE.LIMIT_MAX).optional().default(15),
-		page: z.number().min(1, MESSAGE.LIMIT_MIN).optional().default(1),
+		limit: z.coerce.number().int().min(1, MESSAGE.LIMIT_MIN).max(100, MESSAGE.LIMIT_MAX).optional(),
+		page: z.coerce.number().int().min(1, MESSAGE.LIMIT_MIN).optional(),
 	}),
 });

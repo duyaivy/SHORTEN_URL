@@ -24,12 +24,7 @@ urlRouter.post(
 	isLoggedInValidator(AccessTokenValidation),
 	wrapRequestHandler(urlController.createShortUrl),
 );
-/**
- * get url
- * GET /
- * params: { alias: string }
- */
-urlRouter.get("/:alias", wrapRequestHandler(urlController.getShortUrl));
+
 /**
  * get url has password
  * POST /
@@ -53,17 +48,6 @@ urlRouter.delete(
 );
 /**
  * update URL
- * PATCH
- * body: { alias: string, url?: string, password?: string, is_active?: boolean }
- */
-urlRouter.patch(
-	"/:alias",
-	validateRequest(updateUrlSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.updateUrl),
-);
-/**
- * update URL
  * PATCH /
  * body: { alias: string }
  */
@@ -79,10 +63,26 @@ urlRouter.patch(
  * query: { limit: number, page: number }
  */
 urlRouter.get(
-	"/my-urls/get",
+	"/my-urls",
 	validateRequest(paginationSchema),
 	AccessTokenValidation,
 	wrapRequestHandler(urlController.getMyURLs),
 );
-
+/**
+ * update URL
+ * PATCH
+ * body: { alias: string, url?: string, password?: string, is_active?: boolean }
+ */
+urlRouter.patch(
+	"/:alias",
+	validateRequest(updateUrlSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.updateUrl),
+);
+/**
+ * get url
+ * GET /
+ * params: { alias: string }
+ */
+urlRouter.get("/:alias", wrapRequestHandler(urlController.getShortUrl));
 export { urlRouter };
