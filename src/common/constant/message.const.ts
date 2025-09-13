@@ -29,6 +29,7 @@ export const MESSAGE = {
 	LIMIT_MIN: "Gía trị tối thiểu là 1",
 	IS_BOOLEAN: "Gía trị phải là kiểu boolean",
 	INVALID_ID: "ID không hợp lệ",
+	GET_ME_SUCCESS: "Lấy thông tin người dùng thành công",
 };
 export const URL_MESSAGES = {
 	INVALID_URL: "URL không hợp lệ",

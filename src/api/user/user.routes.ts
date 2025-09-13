@@ -7,7 +7,7 @@ const userRouter = Router();
 
 /**
  *
- * forgot-password
+ * get-me
  * GET /user/get-me
  * params: { email: string }
  */

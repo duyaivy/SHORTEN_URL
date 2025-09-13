@@ -27,3 +27,5 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 		data: null,
 	});
 };
+
+export default (): [RequestHandler, ErrorRequestHandler] => [unexpectedRequest, addErrorToRequestLog];

@@ -33,7 +33,7 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Routes
-app.use("/users", userRouter);
+app.use("/user", userRouter);
 app.use("/auth", authRouter);
 app.use("/", urlRouter);
 // Error handlers
