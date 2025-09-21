@@ -58,7 +58,7 @@ authRouter.post(
 );
 /**
  * reset-password
- * POST /auth/reset-password
+ * POST /auth/logout
  * params: { email: string }
  */
 authRouter.delete("/logout", AccessTokenValidation, RefreshTokenValidation, wrapRequestHandler(authController.logout));

@@ -37,8 +37,8 @@ class UrlService {
 		});
 		await databaseService.urls.insertOne(newUrl);
 		return {
-			short_url: link,
-			qr_code: qr_code.Location as string,
+			...newUrl,
+			short_url: link
 		};
 	}
 	async getShortUrl(alias: string) {

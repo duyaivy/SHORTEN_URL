@@ -11,7 +11,7 @@ export const createShortUrlSchema = z.object({
 });
 export const getShortUrlSchema = z.object({
 	body: z.object({
-		password: commonValidations.password,
+		password: z.string().min(3).max(30).optional(),
 	}),
 	params: z.object({ alias: z.string().min(3).max(30) }),
 });

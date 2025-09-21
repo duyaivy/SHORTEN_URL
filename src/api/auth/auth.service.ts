@@ -62,7 +62,7 @@ class AuthService {
 	async login({ email, password }: RegisterRequest) {
 		const user = await databaseService.users.findOne({ email, password: hashPassword(password) });
 		if (!user) {
-			throw ServiceResponse.failure(AUTH_MESSAGES.WRONG_EMAIL_OR_PASSWORD, null, StatusCodes.UNAUTHORIZED);
+			throw ServiceResponse.failure(AUTH_MESSAGES.WRONG_EMAIL_OR_PASSWORD, null, StatusCodes.BAD_REQUEST);
 		}
 		const access_token = await this.signAccessToken({ userId: user._id.toString() });
 		const refresh_token = await this.signRefreshToken({ userId: user._id.toString() });
