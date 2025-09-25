@@ -56,3 +56,24 @@ export interface URLMini {
 	_id: string;
 	is_active: boolean;
 }
+
+interface QRScanHistoryType {
+	_id?: ObjectId;
+	owner_id: ObjectId;
+	encoded: string | null;
+	created_at?: Date;
+}
+
+export class QRScanHistory {
+	_id?: ObjectId;
+	owner_id: ObjectId;
+	encoded: string | null;
+	created_at: Date;
+	constructor({ _id, owner_id, encoded, created_at }: QRScanHistoryType) {
+		const date = new Date();
+		this._id = _id ? _id : new ObjectId(_id);
+		this.owner_id = owner_id ? owner_id : new ObjectId(owner_id);
+		this.encoded = encoded;
+		this.created_at = created_at ? new Date(created_at) : date;
+	}
+}

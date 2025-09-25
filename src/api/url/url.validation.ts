@@ -9,6 +9,11 @@ export const createShortUrlSchema = z.object({
 		password: commonValidations.password.optional(),
 	}),
 });
+export const createQrHistorySchema = z.object({
+	body: z.object({
+		encode: z.string().url(URL_MESSAGES.INVALID_URL),
+	}),
+});
 export const getShortUrlSchema = z.object({
 	body: z.object({
 		password: z.string().min(3).max(30).optional(),

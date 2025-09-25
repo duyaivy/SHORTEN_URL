@@ -12,7 +12,7 @@ import { hashPassword } from "@/common/utils/hashPassword";
 import { generateAndUploadQrCodeToS3 } from "@/common/utils/qrCode";
 import { deleteFileS3 } from "@/common/utils/s3";
 import { getUrlFromAlias } from "@/common/utils/url";
-import { type CreateShortUrlRequest, type UpdateUrlRequest, URL, type URLMini } from "./url.model";
+import { type CreateShortUrlRequest, QRScanHistory, type UpdateUrlRequest, URL, type URLMini } from "./url.model";
 
 class UrlService {
 	async createShortUrl({ alias, url, password }: CreateShortUrlRequest, userId?: string) {
@@ -38,7 +38,7 @@ class UrlService {
 		await databaseService.urls.insertOne(newUrl);
 		return {
 			...newUrl,
-			short_url: link
+			short_url: link,
 		};
 	}
 	async getShortUrl(alias: string) {
@@ -52,9 +52,10 @@ class UrlService {
 			throw ServiceResponse.failure(URL_MESSAGES.URL_NOT_FOUND, null, StatusCodes.NOT_FOUND);
 		}
 		if (url.password) {
-			return `${env.CLIENT_SHORT_LINK}/password?alias=${aliasText}`;
+			const newUrl = `${env.CLIENT_SHORT_LINK}/password/${aliasText}`;
+			return omit({ ...url, url: newUrl }, "password");
 		}
-		return url.url;
+		return omit(url, "password");
 	}
 	async getShortUrlWithPassword(alias: string, password: string) {
 		const aliasText = encodeURIComponent(alias);
@@ -66,7 +67,7 @@ class UrlService {
 		if (!url) {
 			throw ServiceResponse.failure(URL_MESSAGES.URL_NOT_FOUND_OR_INCORRECT_PASSWORD, null, StatusCodes.BAD_REQUEST);
 		}
-		return url.url;
+		return omit(url, "password");
 	}
 	async deleteURLs({ ids, userId }: { ids: string[]; userId: string }) {
 		const ObjectUserId = new ObjectId(userId);
@@ -101,7 +102,7 @@ class UrlService {
 						alias: newAlias,
 						qr_code: (newQrCode as CompleteMultipartUploadCommandOutput).Location as string,
 						is_active: is_active ?? existURL.is_active,
-						password: password ? hashPassword(password) : existURL.password,
+						password: password ? hashPassword(password) : null,
 						url: url ?? existURL.url,
 					},
 					$currentDate: { updated_at: true },
@@ -167,8 +168,46 @@ class UrlService {
 				limit: limitNumber,
 			},
 			data: data.map((item) => {
-				return { ...item, password: undefined };
+				return { ...item, password: undefined, short_url: getUrlFromAlias(item.alias) };
 			}),
+		};
+	}
+	async createQrHistory({ owner_id, encoded }: { owner_id: string; encoded: string }) {
+		const qrHistory = await databaseService.qrHistories.findOneAndReplace(
+			{
+				owner_id: new ObjectId(owner_id),
+				encoded,
+			},
+			{
+				created_at: new Date(),
+				owner_id: new ObjectId(owner_id),
+				encoded,
+			},
+			{ upsert: true, returnDocument: "after" },
+		);
+		return qrHistory;
+	}
+	async getMyQrHistories({ limit, page }: PaginationRequest, user_id: string) {
+		const limitNumber = Number(limit) || DEFAULT_LIMIT;
+		const pageNumber = Number(page) || DEFAULT_PAGE;
+		const skip = (pageNumber - 1) * limitNumber;
+		const [data, totalDocument] = await Promise.all([
+			databaseService.qrHistories
+				.find({
+					owner_id: new ObjectId(user_id),
+				})
+				.skip(skip)
+				.limit(limitNumber)
+				.toArray(),
+			databaseService.qrHistories.countDocuments({ owner_id: new ObjectId(user_id) }),
+		]);
+		return {
+			control: {
+				total: Math.ceil(totalDocument / limitNumber),
+				page: pageNumber,
+				limit: limitNumber,
+			},
+			data,
 		};
 	}
 }

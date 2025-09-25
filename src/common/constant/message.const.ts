@@ -41,4 +41,7 @@ export const URL_MESSAGES = {
 	DELETE_URLS_SUCCESS: "Xóa URLs thành công",
 	UPDATE_URL_SUCCESS: "Cập nhật URL thành công",
 	ALIAS_ALREADY_EXISTS: "Alias đã tồn tại",
+	GET_SHORT_URL_SUCCESS: "Lấy URL rút gọn thành công",
+	CREATE_QR_HISTORY_SUCCESS: "Tạo lịch sử quét mã QR thành công",
+	GET_QR_HISTORIES_SUCCESS: "Lấy lịch sử quét mã QR thành công",
 };

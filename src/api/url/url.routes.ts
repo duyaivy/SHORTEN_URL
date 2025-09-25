@@ -3,6 +3,7 @@ import { validateRequest, wrapRequestHandler } from "@/common/utils/httpHandlers
 import { AccessTokenValidation, isLoggedInValidator } from "../auth/auth.validation";
 import { urlController } from "./url.controller";
 import {
+	createQrHistorySchema,
 	createShortUrlSchema,
 	deleteURLsSchema,
 	getShortUrlSchema,
@@ -24,14 +25,25 @@ urlRouter.post(
 	isLoggedInValidator(AccessTokenValidation),
 	wrapRequestHandler(urlController.createShortUrl),
 );
-
+/**
+ * create QR history
+ * POST /
+ * access_token: string
+ * body: { encode: string }
+ */
+urlRouter.post(
+	"/history",
+	validateRequest(createQrHistorySchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.createQrHistory),
+);
 /**
  * get url has password
  * POST /
  * params: { alias: string }
  */
 urlRouter.post(
-	"/:alias",
+	"/api/:alias",
 	validateRequest(getShortUrlSchema),
 	wrapRequestHandler(urlController.getShortUrlWithPassword),
 );
@@ -84,5 +96,13 @@ urlRouter.patch(
  * GET /
  * params: { alias: string }
  */
-urlRouter.get("/:alias", wrapRequestHandler(urlController.getShortUrl));
+urlRouter.get("/api/:alias", wrapRequestHandler(urlController.getShortUrl));
+
+/**
+ * get url SEO
+ * GET /
+ * params: { alias: string }
+ */
+urlRouter.get("/api/resolve/:alias", wrapRequestHandler(urlController.getShortUrlSEO));
+
 export { urlRouter };

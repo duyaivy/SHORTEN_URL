@@ -1,5 +1,5 @@
 import { type Collection, type Db, MongoClient } from "mongodb";
-import type { URL } from "@/api/url/url.model";
+import type { QRScanHistory, URL } from "@/api/url/url.model";
 import { env } from "@/common/utils/envConfig";
 import type { User } from "../../api/user/user.model";
 import type { RefreshToken } from "../models/refreshToken.model";
@@ -67,6 +67,9 @@ class DBService {
 	}
 	get urls(): Collection<URL> {
 		return this.db.collection(env.DB_URL_COLLECTION);
+	}
+	get qrHistories(): Collection<QRScanHistory> {
+		return this.db.collection(env.DB_QR_HISTORY_COLLECTION);
 	}
 }
 
