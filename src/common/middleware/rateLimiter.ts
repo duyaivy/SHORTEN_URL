@@ -12,7 +12,6 @@ const rateLimiter = rateLimit({
 	keyGenerator: (req: Request, _res: Response) => {
 		const apiKey = req.header("x-api-key");
 		if (apiKey) return `k:${apiKey}`;
-
 		return ipKeyGenerator(req.ip as string);
 	},
 });

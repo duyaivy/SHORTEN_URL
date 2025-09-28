@@ -2,13 +2,14 @@ import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { pino } from "pino";
-import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
-import { userRouter } from "@/api/user/userRouter";
-import { openAPIRouter } from "@/api-docs/openAPIRouter";
-import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
+import { authRouter } from "./api/auth/auth.routes";
+import { urlRouter } from "./api/url/url.routes";
+import { userRouter } from "./api/user/user.routes";
+import { addErrorToRequestLog, errorHandler } from "./common/middleware/errorHandler";
+import databaseService from "./common/services/database.service";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -16,6 +17,11 @@ const app: Express = express();
 // Set the application to trust the reverse proxy
 app.set("trust proxy", true);
 
+// connect to database
+databaseService.connect().then(() => {
+	databaseService.indexUser();
+	databaseService.indexURL();
+});
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -27,13 +33,11 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Routes
-app.use("/health-check", healthCheckRouter);
-app.use("/users", userRouter);
-
-// Swagger UI
-app.use(openAPIRouter);
-
+app.use("/user", userRouter);
+app.use("/auth", authRouter);
+app.use("/", urlRouter);
 // Error handlers
-app.use(errorHandler());
+app.use(addErrorToRequestLog);
+app.use(errorHandler);
 
 export { app, logger };
