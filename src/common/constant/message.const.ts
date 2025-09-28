@@ -10,9 +10,11 @@ export const AUTH_MESSAGES = {
 	EMAIL_NOT_VERIFIED: "Email chưa được xác minh",
 	LOGOUT_SUCCESS: "Đăng xuất thành công",
 	INVALID_REFRESH_TOKEN: "Refresh token không hợp lệ",
+	GOOGLE_OAUTH_SUCCESS: "Đăng nhập với Google thành công",
 };
 export const MESSAGE = {
 	NOT_FOUND: "Không tìm thấy",
+	CODE_REQUIRED: "Code không được để trống",
 	INTERNAL_SERVER_ERROR: "Lỗi máy chủ nội bộ",
 	INVALID_EMAIL: "Lỗi định dạng email",
 	INVALID_PASSWORD: "Mật khẩu từ 6 đến 100 ký tự, phải chứa ký tự đặc biệt và số",
