@@ -12,7 +12,7 @@ import { hashPassword } from "@/common/utils/hashPassword";
 import { generateAndUploadQrCodeToS3 } from "@/common/utils/qrCode";
 import { deleteFileS3 } from "@/common/utils/s3";
 import { getUrlFromAlias } from "@/common/utils/url";
-import { type CreateShortUrlRequest, QRScanHistory, type UpdateUrlRequest, URL, type URLMini } from "./url.model";
+import { type CreateShortUrlRequest, type UpdateUrlRequest, URL, type URLMini } from "./url.model";
 
 class UrlService {
 	async createShortUrl({ alias, url, password }: CreateShortUrlRequest, userId?: string) {

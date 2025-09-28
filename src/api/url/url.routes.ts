@@ -32,10 +32,21 @@ urlRouter.post(
  * body: { encode: string }
  */
 urlRouter.post(
-	"/history",
+	"/qr-history",
 	validateRequest(createQrHistorySchema),
 	AccessTokenValidation,
 	wrapRequestHandler(urlController.createQrHistory),
+);
+/**
+ * get my URLs
+ * GET /
+ * query: { limit: number, page: number }
+ */
+urlRouter.get(
+	"/qr-history",
+	validateRequest(paginationSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.getMyQrHistories),
 );
 /**
  * get url has password

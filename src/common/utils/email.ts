@@ -47,7 +47,7 @@ export const sendForgotPassword = (
 			.replaceAll("{{title}}", "Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu.")
 			.replace("{{content}}", "Nhấn vào nút bên dưới để đặt lại mật khẩu của bạn")
 			.replace("{{titleLink}}", "Đặt lại mật khẩu")
-			.replace("{{link}}", `${env.CLIENT_URL}/reset-password?token=${forgot_password_token}`)
+			.replace("{{link}}", `${env.CLIENT_URL}/a/login?token=${forgot_password_token}`)
 			.replace("{{year}}", new Date().getFullYear().toString()),
 	});
 };
