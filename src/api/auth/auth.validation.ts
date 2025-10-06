@@ -14,6 +14,11 @@ export const RegisterSchema = z.object({
 	}),
 });
 export const LoginSchema = RegisterSchema;
+export const LoginGGSchema = z.object({
+	query: z.object({
+		code: z.string().min(1, MESSAGE.CODE_REQUIRED),
+	}),
+});
 export const ForgotPasswordSchema = z.object({
 	query: z.object({
 		email: commonValidations.email,

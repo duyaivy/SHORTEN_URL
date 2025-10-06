@@ -38,5 +38,9 @@ class AuthController {
 		await authService.logout({ userId, refreshToken });
 		res.send(ServiceResponse.success(AUTH_MESSAGES.LOGOUT_SUCCESS, null));
 	};
+	googleOauth = async (req: Request<any, any, any, { code: string }>, res: Response, _next: NextFunction) => {
+		const returnData = await authService.googleOauth(req.query.code as string);
+		res.send(ServiceResponse.success(AUTH_MESSAGES.GOOGLE_OAUTH_SUCCESS, returnData));
+	};
 }
 export const authController = new AuthController();

@@ -6,6 +6,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { TokenPayLoad } from "@/common/types/jwt.type";
 import type {
 	CreateShortUrlRequest,
+	DeleteQrHistoryRequest,
 	DeleteURLsRequest,
 	GetURLPasswordRequest,
 	UpdateUrlRequest,
@@ -69,10 +70,10 @@ class UrlController {
 		const data = await urlService.getMyURLs({ limit, page }, userId);
 		res.send(ServiceResponse.success(URL_MESSAGES.UPDATE_URL_SUCCESS, data));
 	};
-	createQrHistory = async (req: Request<any, any, { encoded: string }>, res: Response, _next: NextFunction) => {
+	createQrHistory = async (req: Request<any, any, { decoded: string }>, res: Response, _next: NextFunction) => {
 		const userId = (req.decode_token_payload as TokenPayLoad)?.userId;
-		const { encoded } = req.body;
-		await urlService.createQrHistory({ owner_id: userId, encoded });
+		const { decoded } = req.body;
+		await urlService.createQrHistory({ owner_id: userId, decoded });
 		res.send(ServiceResponse.success(URL_MESSAGES.CREATE_QR_HISTORY_SUCCESS, null));
 	};
 	getMyQrHistories = async (req: Request<any, any, any, PaginationRequest>, res: Response, _next: NextFunction) => {
@@ -80,6 +81,17 @@ class UrlController {
 		const { limit, page } = req.query;
 		const data = await urlService.getMyQrHistories({ limit, page }, userId);
 		res.send(ServiceResponse.success(URL_MESSAGES.GET_QR_HISTORIES_SUCCESS, data));
+	};
+	deleteQrHistory = async (req: Request<any, any, DeleteQrHistoryRequest>, res: Response, _next: NextFunction) => {
+		const userId = (req.decode_token_payload as TokenPayLoad)?.userId;
+		const { ids } = req.body;
+		await urlService.deleteQrHistories({ ids, userId });
+		res.send(ServiceResponse.success(URL_MESSAGES.DELETE_URLS_SUCCESS, null));
+	};
+	reCaptcha = async (req: Request<any, any, { token: string }>, res: Response, _next: NextFunction) => {
+		const { token } = req.body;
+		const data = await urlService.reCaptcha(token);
+		res.send(ServiceResponse.success(URL_MESSAGES.RECAPTCHA_SUCCESS, data));
 	};
 }
 

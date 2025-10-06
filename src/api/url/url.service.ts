@@ -172,16 +172,16 @@ class UrlService {
 			}),
 		};
 	}
-	async createQrHistory({ owner_id, encoded }: { owner_id: string; encoded: string }) {
+	async createQrHistory({ owner_id, decoded }: { owner_id: string; decoded: string }) {
 		const qrHistory = await databaseService.qrHistories.findOneAndReplace(
 			{
 				owner_id: new ObjectId(owner_id),
-				encoded,
+				decoded,
 			},
 			{
 				created_at: new Date(),
 				owner_id: new ObjectId(owner_id),
-				encoded,
+				decoded,
 			},
 			{ upsert: true, returnDocument: "after" },
 		);
@@ -209,6 +209,25 @@ class UrlService {
 			},
 			data,
 		};
+	}
+	async deleteQrHistories({ ids, userId }: { ids: string[]; userId: string }) {
+		const ObjectUserId = new ObjectId(userId);
+		await databaseService.qrHistories.deleteMany({
+			_id: { $in: ids.map((id) => new ObjectId(id)) },
+			owner_id: ObjectUserId,
+		});
+		return;
+	}
+	async reCaptcha(token: string) {
+		try{
+
+			const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${env.SECRECT_KEY_RECAPCHA}&response=${token}`);
+			const data = await response.json();
+			return data;
+		}catch(error){
+			throw ServiceResponse.failure(URL_MESSAGES.RECAPTCHA_FAILED, false, StatusCodes.BAD_REQUEST);
+		}
+		
 	}
 }
 export const urlService = new UrlService();

@@ -11,7 +11,7 @@ export const createShortUrlSchema = z.object({
 });
 export const createQrHistorySchema = z.object({
 	body: z.object({
-		encode: z.string().url(URL_MESSAGES.INVALID_URL),
+		decoded: z.string().url(URL_MESSAGES.INVALID_URL),
 	}),
 });
 export const getShortUrlSchema = z.object({

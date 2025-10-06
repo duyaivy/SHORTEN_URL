@@ -12,6 +12,9 @@ import { sendForgotPassword, sendResetPasswordEmail } from "@/common/utils/email
 import { env } from "@/common/utils/envConfig";
 import { hashPassword } from "@/common/utils/hashPassword";
 import { signJWT, verifyJWT } from "@/common/utils/jwt";
+import axios from "axios";
+import { randomPassword } from "@/common/utils/randoms";
+import { getOauthGoogleProfile, getOauthGoogleToken } from "@/common/utils/url";
 
 class AuthService {
 	async register({ email, password }: RegisterRequest) {
@@ -121,5 +124,31 @@ class AuthService {
 		}
 		return;
 	}
+	async googleOauth(code: string) {
+		const { id_token, access_token } = await getOauthGoogleToken(code);
+		if (!id_token || !access_token) {
+			throw ServiceResponse.failure(AUTH_MESSAGES.FAILED_TO_FETCH_GOOGLE_TOKEN, null, StatusCodes.BAD_REQUEST);
+		}
+		
+		const profile = await getOauthGoogleProfile(access_token, id_token);
+		const userExist = await databaseService.users.findOne({ email: profile.email })
+		if(userExist){
+			const [access_token, refresh_token] = await Promise.all([
+				this.signAccessToken({ userId: userExist._id.toString() }),
+				this.signRefreshToken({ userId: userExist._id.toString() }),
+			]);
+		return { access_token, refresh_token };
+		}else{
+			const password = randomPassword();
+			const newUser = new User({ email: profile.email, password, avatar_url: profile.picture });
+			const { insertedId } = await databaseService.users.insertOne(newUser);
+			const [access_token, refresh_token] = await Promise.all([
+				this.signAccessToken({ userId: insertedId.toString() }),
+				this.signRefreshToken({ userId: insertedId.toString() }),
+			]);
+			return { access_token, refresh_token };
+		}
+	}
+	
 }
 export const authService = new AuthService();

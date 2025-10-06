@@ -4,6 +4,7 @@ import { authController } from "./auth.controller";
 import {
 	AccessTokenValidation,
 	ForgotPasswordSchema,
+	LoginGGSchema,
 	LoginSchema,
 	RefreshTokenValidation,
 	RegisterSchema,
@@ -28,6 +29,12 @@ authRouter.post("/register", validateRequest(RegisterSchema), wrapRequestHandler
  */
 authRouter.post("/login", validateRequest(LoginSchema), wrapRequestHandler(authController.login));
 
+/**
+ * login with gg
+ * POST /auth/
+ * body: { email: string, password: string }
+ */
+authRouter.get("/oauth", validateRequest(LoginGGSchema), wrapRequestHandler(authController.googleOauth));
 /**
  *
  * refresh-token

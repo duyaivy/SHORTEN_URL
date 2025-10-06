@@ -13,7 +13,12 @@ import {
 } from "./url.validation";
 
 const urlRouter: Router = Router();
-
+/**
+ * ReCaptcha
+ * POST /
+ * body: { token: string }
+ */
+urlRouter.post("/api/recaptcha", wrapRequestHandler(urlController.reCaptcha));
 /**
  * create short url
  * POST /
@@ -47,6 +52,17 @@ urlRouter.get(
 	validateRequest(paginationSchema),
 	AccessTokenValidation,
 	wrapRequestHandler(urlController.getMyQrHistories),
+);
+/**
+ * get url has password
+ * POST /
+ * params: { alias: string }
+ */
+urlRouter.delete(
+	"/qr-history",
+	validateRequest(deleteURLsSchema),
+	AccessTokenValidation,
+	wrapRequestHandler(urlController.deleteQrHistory),
 );
 /**
  * get url has password
@@ -102,6 +118,7 @@ urlRouter.patch(
 	AccessTokenValidation,
 	wrapRequestHandler(urlController.updateUrl),
 );
+
 /**
  * get url
  * GET /
@@ -115,5 +132,7 @@ urlRouter.get("/api/:alias", wrapRequestHandler(urlController.getShortUrl));
  * params: { alias: string }
  */
 urlRouter.get("/api/resolve/:alias", wrapRequestHandler(urlController.getShortUrlSEO));
+
+
 
 export { urlRouter };

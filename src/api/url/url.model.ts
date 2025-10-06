@@ -45,6 +45,7 @@ export interface CreateShortUrlRequest {
 export interface DeleteURLsRequest {
 	ids: string[];
 }
+export interface DeleteQrHistoryRequest extends DeleteURLsRequest{}
 export interface GetURLPasswordRequest {
 	alias: string;
 	password: string;
@@ -60,20 +61,20 @@ export interface URLMini {
 interface QRScanHistoryType {
 	_id?: ObjectId;
 	owner_id: ObjectId;
-	encoded: string | null;
+	decoded: string | null;
 	created_at?: Date;
 }
 
 export class QRScanHistory {
 	_id?: ObjectId;
 	owner_id: ObjectId;
-	encoded: string | null;
+	decoded: string | null;
 	created_at: Date;
-	constructor({ _id, owner_id, encoded, created_at }: QRScanHistoryType) {
+	constructor({ _id, owner_id, decoded, created_at }: QRScanHistoryType) {
 		const date = new Date();
 		this._id = _id ? _id : new ObjectId(_id);
 		this.owner_id = owner_id ? owner_id : new ObjectId(owner_id);
-		this.encoded = encoded;
+		this.decoded = decoded;
 		this.created_at = created_at ? new Date(created_at) : date;
 	}
 }
