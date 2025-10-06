@@ -46,4 +46,6 @@ export const URL_MESSAGES = {
 	GET_SHORT_URL_SUCCESS: "Lấy URL rút gọn thành công",
 	CREATE_QR_HISTORY_SUCCESS: "Tạo lịch sử quét mã QR thành công",
 	GET_QR_HISTORIES_SUCCESS: "Lấy lịch sử quét mã QR thành công",
+	RECAPTCHA_SUCCESS: "ReCaptcha thành công",
+	RECAPTCHA_FAILED: "ReCaptcha thất bại",
 };

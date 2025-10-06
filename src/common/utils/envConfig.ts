@@ -37,6 +37,8 @@ const envSchema = z.object({
 	AWS_BUCKET_NAME: z.string().min(1).default("your-aws-bucket-name"),
 	CLIENT_SHORT_LINK: z.string().url().min(1).default("http://localhost:3000"),
 	DB_QR_HISTORY_COLLECTION: z.string().min(1).default("qr_histories"),
+	SECRECT_KEY_RECAPCHA: z.string().min(1).default("your-recaptcha-secret-key"),
+
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
