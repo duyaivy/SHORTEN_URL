@@ -94,6 +94,12 @@ class UrlService {
     }
     return omit(url, "password");
   }
+  async deleteURLsAgenda(ids: string[]) {
+    await databaseService.urls.deleteMany({
+      _id: { $in: ids.map((id) => new ObjectId(id)) },
+    });
+    return true;
+  }
   async deleteURLs({ ids, userId }: { ids: string[]; userId: string }) {
     const ObjectUserId = new ObjectId(userId);
     await databaseService.urls.deleteMany({

@@ -1,6 +1,7 @@
 import { env } from "@/common/utils/envConfig";
 import databaseService from "../services/database.service";
 import Agenda from "agenda";
+import { urlService } from "@/api/url/url.service";
 
 const agenda = new Agenda({
   db: { address: env.DB_CONNECTION_STRING, collection: "agendaJobs" },
@@ -11,14 +12,16 @@ const agenda = new Agenda({
  */
 agenda.define("delete expired urls", async () => {
   const now = new Date();
-  const result = await databaseService.urls.deleteMany({
-    exp: { $ne: null, $lte: now },
-  });
+  const results = await databaseService.urls
+    .find({
+      exp: { $ne: null, $lte: now },
+    })
+    .toArray();
+  const deleteIds = results.map((i) => i._id.toString());
+  const isSuccess = await urlService.deleteURLsAgenda(deleteIds);
 
   console.log(
-    `[Agenda] Deleted ${
-      result.deletedCount
-    } expired URLs at ${now.toISOString()}`
+    `[Agenda] Deleted ${results.length} expired URLs at ${now.toISOString()}`
   );
 });
 
