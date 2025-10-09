@@ -1,15 +1,21 @@
 import { Router } from "express";
-import { validateRequest, wrapRequestHandler } from "@/common/utils/httpHandlers";
-import { AccessTokenValidation, isLoggedInValidator } from "../auth/auth.validation";
+import {
+  validateRequest,
+  wrapRequestHandler,
+} from "@/common/utils/httpHandlers";
+import {
+  AccessTokenValidation,
+  isLoggedInValidator,
+} from "../auth/auth.validation";
 import { urlController } from "./url.controller";
 import {
-	createQrHistorySchema,
-	createShortUrlSchema,
-	deleteURLsSchema,
-	getShortUrlSchema,
-	paginationSchema,
-	updateUrlActiveSchema,
-	updateUrlSchema,
+  createQrHistorySchema,
+  createShortUrlSchema,
+  deleteURLsSchema,
+  getShortUrlSchema,
+  paginationSchema,
+  updateUrlActiveSchema,
+  updateUrlSchema,
 } from "./url.validation";
 
 const urlRouter: Router = Router();
@@ -18,17 +24,17 @@ const urlRouter: Router = Router();
  * POST /
  * body: { token: string }
  */
-urlRouter.post("/api/recaptcha", wrapRequestHandler(urlController.reCaptcha));
+urlRouter.post("/view/recaptcha", wrapRequestHandler(urlController.reCaptcha));
 /**
  * create short url
  * POST /
  * body: { url: string, alias: string, password: string }
  */
 urlRouter.post(
-	"/",
-	validateRequest(createShortUrlSchema),
-	isLoggedInValidator(AccessTokenValidation),
-	wrapRequestHandler(urlController.createShortUrl),
+  "/",
+  validateRequest(createShortUrlSchema),
+  isLoggedInValidator(AccessTokenValidation),
+  wrapRequestHandler(urlController.createShortUrl)
 );
 /**
  * create QR history
@@ -37,10 +43,10 @@ urlRouter.post(
  * body: { encode: string }
  */
 urlRouter.post(
-	"/qr-history",
-	validateRequest(createQrHistorySchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.createQrHistory),
+  "/qr-history",
+  validateRequest(createQrHistorySchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.createQrHistory)
 );
 /**
  * get my URLs
@@ -48,10 +54,10 @@ urlRouter.post(
  * query: { limit: number, page: number }
  */
 urlRouter.get(
-	"/qr-history",
-	validateRequest(paginationSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.getMyQrHistories),
+  "/qr-history",
+  validateRequest(paginationSchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.getMyQrHistories)
 );
 /**
  * get url has password
@@ -59,10 +65,10 @@ urlRouter.get(
  * params: { alias: string }
  */
 urlRouter.delete(
-	"/qr-history",
-	validateRequest(deleteURLsSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.deleteQrHistory),
+  "/qr-history",
+  validateRequest(deleteURLsSchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.deleteQrHistory)
 );
 /**
  * get url has password
@@ -70,9 +76,9 @@ urlRouter.delete(
  * params: { alias: string }
  */
 urlRouter.post(
-	"/api/:alias",
-	validateRequest(getShortUrlSchema),
-	wrapRequestHandler(urlController.getShortUrlWithPassword),
+  "/view/:alias",
+  validateRequest(getShortUrlSchema),
+  wrapRequestHandler(urlController.getShortUrlWithPassword)
 );
 /**
  * get url has password
@@ -80,10 +86,10 @@ urlRouter.post(
  * params: { alias: string }
  */
 urlRouter.delete(
-	"/my-urls",
-	validateRequest(deleteURLsSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.deleteURLs),
+  "/my-urls",
+  validateRequest(deleteURLsSchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.deleteURLs)
 );
 /**
  * update URL
@@ -91,10 +97,10 @@ urlRouter.delete(
  * body: { alias: string }
  */
 urlRouter.patch(
-	"/my-urls/active",
-	validateRequest(updateUrlActiveSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.updateUrlActive),
+  "/my-urls/active",
+  validateRequest(updateUrlActiveSchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.updateUrlActive)
 );
 /**
  * get my URLs
@@ -102,10 +108,10 @@ urlRouter.patch(
  * query: { limit: number, page: number }
  */
 urlRouter.get(
-	"/my-urls",
-	validateRequest(paginationSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.getMyURLs),
+  "/my-urls",
+  validateRequest(paginationSchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.getMyURLs)
 );
 /**
  * update URL
@@ -113,10 +119,10 @@ urlRouter.get(
  * body: { alias: string, url?: string, password?: string, is_active?: boolean }
  */
 urlRouter.patch(
-	"/:alias",
-	validateRequest(updateUrlSchema),
-	AccessTokenValidation,
-	wrapRequestHandler(urlController.updateUrl),
+  "/:alias",
+  validateRequest(updateUrlSchema),
+  AccessTokenValidation,
+  wrapRequestHandler(urlController.updateUrl)
 );
 
 /**
@@ -124,15 +130,16 @@ urlRouter.patch(
  * GET /
  * params: { alias: string }
  */
-urlRouter.get("/api/:alias", wrapRequestHandler(urlController.getShortUrl));
+urlRouter.get("/view/:alias", wrapRequestHandler(urlController.getShortUrl));
 
 /**
  * get url SEO
  * GET /
  * params: { alias: string }
  */
-urlRouter.get("/api/resolve/:alias", wrapRequestHandler(urlController.getShortUrlSEO));
-
-
+urlRouter.get(
+  "/view/resolve/:alias",
+  wrapRequestHandler(urlController.getShortUrlSEO)
+);
 
 export { urlRouter };
