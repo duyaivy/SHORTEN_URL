@@ -8,8 +8,12 @@ import { env } from "@/common/utils/envConfig";
 import { authRouter } from "./api/auth/auth.routes";
 import { urlRouter } from "./api/url/url.routes";
 import { userRouter } from "./api/user/user.routes";
-import { addErrorToRequestLog, errorHandler } from "./common/middleware/errorHandler";
+import {
+  addErrorToRequestLog,
+  errorHandler,
+} from "./common/middleware/errorHandler";
 import databaseService from "./common/services/database.service";
+import { setupAgenda } from "./common/utils/agenda";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -19,9 +23,16 @@ app.set("trust proxy", true);
 
 // connect to database
 databaseService.connect().then(() => {
-	databaseService.indexUser();
-	databaseService.indexURL();
+  databaseService.indexUser();
+  databaseService.indexURL();
 });
+setupAgenda()
+  .then(() => {
+    console.log("Setup agenda successfully!");
+  })
+  .catch(() => {
+    console.log("Error setup Agenda");
+  });
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
