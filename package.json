@@ -26,6 +26,7 @@
 		"@types/qrcode": "^1.5.5",
 		"agenda": "^5.0.0",
 		"axios": "^1.11.0",
+		"cheerio": "^1.1.2",
 		"cors": "2.8.5",
 		"date-fns": "^4.1.0",
 		"dotenv": "17.2.1",
@@ -47,6 +48,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.1.4",
+		"@types/cheerio": "^1.0.0",
 		"@types/cors": "2.8.19",
 		"@types/date-fns": "^2.6.3",
 		"@types/express": "5.0.3",

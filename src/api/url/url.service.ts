@@ -1,4 +1,5 @@
 import type { CompleteMultipartUploadCommandOutput } from "@aws-sdk/client-s3";
+import { addDays } from "date-fns";
 import { StatusCodes } from "http-status-codes";
 import { omit } from "lodash";
 import { ObjectId } from "mongodb";
@@ -7,6 +8,7 @@ import { URL_MESSAGES } from "@/common/constant/message.const";
 import type { PaginationRequest } from "@/common/models/common.model";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import databaseService from "@/common/services/database.service";
+import { seoService } from "@/common/services/seo.service";
 import { env } from "@/common/utils/envConfig";
 import { hashPassword } from "@/common/utils/hashPassword";
 import { generateAndUploadQrCodeToS3 } from "@/common/utils/qrCode";
@@ -18,7 +20,6 @@ import {
   URL,
   type URLMini,
 } from "./url.model";
-import { addDays } from "date-fns";
 
 class UrlService {
   async createShortUrl(
@@ -38,18 +39,21 @@ class UrlService {
     }
     // create url -> generate qr code -> upload code to bucket -> save new url with qr code link -> return qr code link + url
     const link = getUrlFromAlias(aliasText);
-    const qr_code = (await generateAndUploadQrCodeToS3(
-      link,
-      aliasText
-    )) as CompleteMultipartUploadCommandOutput;
+    const [qr_code, seo_data] = await Promise.all([
+      generateAndUploadQrCodeToS3(link, aliasText),
+      seoService.getSeoData(url),
+    ]);
+
     const newUrl = new URL({
       alias: aliasText,
       url,
       password: password ? hashPassword(password) : null,
       owner_id: userId ? new ObjectId(userId) : null,
       is_active: true,
-      qr_code: qr_code.Location as string,
+      qr_code: (qr_code as CompleteMultipartUploadCommandOutput)
+        .Location as string,
       views: 0,
+      seo_data,
       exp: userId ? null : addDays(new Date(), 14), // neu da dang nhap thi khong gioi han, neu chua dang nhap thi gioi han thoi gian
     });
     await databaseService.urls.insertOne(newUrl);
@@ -77,6 +81,22 @@ class UrlService {
       return omit({ ...url, url: newUrl }, "password");
     }
     return omit(url, "password");
+  }
+  async getShortUrlSEO(alias: string) {
+    const aliasText = encodeURIComponent(alias);
+    // khong tang views khi get seo
+    const url = await databaseService.urls.findOne(
+      { alias: aliasText, is_active: true },
+      { projection: { password: 1, seo_data: 1 } }
+    );
+    if (!url) {
+      return seoService.createNotFoundMetaHTML();
+    }
+    if (url.password) {
+      return seoService.createProtectedMetaHTML();
+    }
+    const seoData = url.seo_data || {};
+    return seoService.createMetaHTML(seoData);
   }
   async getShortUrlWithPassword(alias: string, password: string) {
     const aliasText = encodeURIComponent(alias);

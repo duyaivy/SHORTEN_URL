@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
-import { addDays } from "date-fns";
+import type { SEOData } from "@/common/services/seo.service";
+
 interface UrlType {
   _id?: ObjectId;
   owner_id: ObjectId | null;
@@ -10,6 +11,7 @@ interface UrlType {
   is_active: boolean;
   qr_code: string;
   exp: Date | null;
+  seo_data: SEOData;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -25,6 +27,7 @@ export class URL {
   exp: Date | null;
   created_at: Date;
   updated_at: Date;
+  seo_data: SEOData;
   constructor({
     _id,
     owner_id,
@@ -35,11 +38,12 @@ export class URL {
     is_active,
     exp,
     qr_code,
+    seo_data,
     created_at,
     updated_at,
   }: UrlType) {
     const date = new Date();
-
+    this.seo_data = seo_data;
     this._id = new ObjectId(_id);
     this.owner_id = owner_id ? new ObjectId(owner_id) : null;
     this.url = url;
