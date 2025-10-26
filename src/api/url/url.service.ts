@@ -120,6 +120,7 @@ class UrlService {
     });
     return true;
   }
+
   async deleteURLs({ ids, userId }: { ids: string[]; userId: string }) {
     const ObjectUserId = new ObjectId(userId);
     await databaseService.urls.deleteMany({

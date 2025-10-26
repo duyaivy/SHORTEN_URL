@@ -15,6 +15,7 @@ const envSchema = z.object({
     .positive()
     .default(1000),
   COMMON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(1000),
+
   DB_CONNECTION_STRING: z.string().url().min(1),
   DB_NAME: z.string().min(1).default("Shorten_URL"),
   DB_USER_COLLECTION: z.string().min(1).default("users"),
