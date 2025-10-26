@@ -157,31 +157,6 @@ pnpm test
 pnpm test src/api/user/__tests__/user.integration.test.ts
 ```
 
----
-
-## 🐳 Docker Support
-
-```bash
-# Build Docker image
-docker build -t shortlink-backend .
-
-# Run container
-docker run -p 8080:8080 shortlink-backend
-```
-
----
-
-## 🚀 Deployment
-
-| Platform                   | Description                     |
-| -------------------------- | ------------------------------- |
-| ☁️ **Render / Railway**    | Simple Node.js hosting          |
-| 🐳 **Docker + VPS**        | Containerized deployment        |
-| 🔐 **NGINX Reverse Proxy** | For SSL termination & routing   |
-| 📈 **PM2**                 | Process management & monitoring |
-
----
-
 ## 💎 Author & Contact
 
 👨‍💻 **Project:** ShortLink
