@@ -33,7 +33,6 @@ Built with **Node.js**, **Express**, and **TypeScript**, it follows a clean modu
 ![Nodemailer](https://img.shields.io/badge/Nodemailer-0078D4?style=flat-square&logo=gmail&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-5E81AC?style=flat-square)
 ![Agenda](https://img.shields.io/badge/Agenda-Scheduler-blue?style=flat-square)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
 
 ### **DevOps & Tools**
 
@@ -159,7 +158,7 @@ pnpm test src/api/user/__tests__/user.integration.test.ts
 
 ## 💎 Author & Contact
 
-👨‍💻 **Project:** ShortLink
+👨‍💻 **Project:** ShortLink <br>
 📧 **Contact:** shortlink.tool@gmail.com  
 🌐 **Website:** [https://shortlinkz.online](https://shortlinkz.online)
 
