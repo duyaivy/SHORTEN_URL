@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ServiceResponse } from '../responses/service-response.js';
+import { ServiceResponse } from '../responses/service-response';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -33,26 +33,46 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ) {
         const respObj = exceptionResponse as Record<string, any>;
 
-        // Class-validator errors format: { message: Array | string, error: string, statusCode: number }
-        if (Array.isArray(respObj.message)) {
-          message = 'Validation Failed';
-          data = respObj.message;
+        if (statusCode === HttpStatus.UNPROCESSABLE_ENTITY || statusCode === HttpStatus.BAD_REQUEST) {
+          message = typeof respObj.message === 'string' && respObj.message !== 'Unprocessable Entity' && respObj.message !== 'Bad Request'
+            ? respObj.message
+            : 'Lỗi xác thực dữ liệu';
+
+          if (Array.isArray(respObj.errors)) {
+            data = respObj.errors;
+          } else if (Array.isArray(respObj.data)) {
+            data = respObj.data;
+          } else if (Array.isArray(respObj.message)) {
+            data = respObj.message.map((err: any) => {
+              if (typeof err === 'object' && err !== null && err.field && err.message) {
+                return err;
+              }
+              if (typeof err === 'string') {
+                return {
+                  field: 'body',
+                  message: err,
+                };
+              }
+              return err;
+            });
+          } else {
+            data = respObj.data || respObj.error || null;
+          }
         } else {
           message = respObj.message || exception.message;
-          data = respObj.error || null;
+          data = respObj.data || respObj.error || null;
         }
       }
     } else if (exception instanceof Error) {
-      // Mongoose / Native JS Error handling
       if (exception.name === 'ValidationError') {
-        statusCode = HttpStatus.BAD_REQUEST;
-        message = exception.message;
+        statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+        message = 'Lỗi xác thực dữ liệu';
       } else if (exception.name === 'CastError') {
         statusCode = HttpStatus.BAD_REQUEST;
-        message = 'Invalid parameter format (CastError)';
+        message = 'Định dạng tham số không hợp lệ';
       } else if ((exception as any).code === 11000) {
         statusCode = HttpStatus.CONFLICT;
-        message = 'Duplicate Key Error';
+        message = 'Dữ liệu đã tồn tại';
       } else {
         message = exception.message;
       }
@@ -72,3 +92,4 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(statusCode).json(formattedResponse);
   }
 }
+

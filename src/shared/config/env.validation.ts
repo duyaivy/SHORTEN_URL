@@ -49,11 +49,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  DB_CONNECTION_STRING: string = 'mongodb://localhost:27017/';
-
-  @IsString()
-  @IsOptional()
-  DB_NAME: string = 'Shorten_URL';
+  DATABASE_URL: string = 'mongodb://localhost:27017/Shorten_Link';
 
   @IsString()
   @IsOptional()
@@ -151,6 +147,10 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   SECRECT_KEY_RECAPCHA?: string;
+
+  @IsString()
+  @IsOptional()
+  PASSWORD_SECRET?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
