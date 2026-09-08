@@ -9,12 +9,14 @@ import { PasswordHasher } from './application/ports/password-hasher';
 import { ArgonPasswordHasher } from './infrastructure/argon2-password-hasher';
 import { TokenService } from './application/ports/token';
 import { JWTTokenService } from './infrastructure/jwt-token.services';
+import { LoginUseCase } from './application/use-cases/login.usecase';
 
 
 @Module({
   controllers: [AuthController],
   providers: [
     RegisterUseCase,
+    LoginUseCase,
     {
         provide: UserRepository,
         useClass: PrismaUserRepository
