@@ -3,12 +3,20 @@ import { PasswordHasher } from "../ports/password-hasher";
 import { UserRepository } from "../../domain/repositories/user.repository";
 import { TokenService } from "../ports/token";
 import { TokenType } from "../../domain/enums/jwt.enum";
+import { RefreshTokenRepository } from "../../domain/repositories/refresh-token.repository";
+import { PrismaRefreshTokenRepository } from "../../infrastructure/prisma-refresh-token.repository";
+import { ConfigService } from "@nestjs/config";
+import { EnvironmentVariables } from "../../../../shared/config/env.validation";
+import ms from 'ms';
+
 @Injectable()
 export class LoginUseCase {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly tokenService: TokenService,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly configService: ConfigService<EnvironmentVariables, true>,
   ) {}
 
   async execute(input: { email: string; password: string }): Promise<any> {
@@ -45,10 +53,21 @@ export class LoginUseCase {
       this.tokenService.generateAccessToken({ userId: user._id, type: TokenType.ACCESS_TOKEN }),
       this.tokenService.generateRefreshToken({ userId: user._id, type: TokenType.REFRESH_TOKEN }),
     ]);
+
+    // Lưu hash của refresh token vào DB
+    const refreshExpirationMs = ms(
+      this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME', { infer: true }) as ms.StringValue
+    );
+    await this.refreshTokenRepository.create({
+      tokenHash: PrismaRefreshTokenRepository.hashToken(refreshToken),
+      userId: user._id,
+      expiresAt: new Date(Date.now() + refreshExpirationMs),
+    });
+
     return {
       accessToken,
       refreshToken,
-      user: {...user, password: undefined}
+      user: { ...user, password: undefined }
     }
   }
 }

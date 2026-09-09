@@ -16,6 +16,10 @@ import { LoginWithGoogleUseCase } from './application/use-cases/login-with-googl
 import { GoogleOauthClient } from './infrastructure/google-oauth.client';
 import { GoogleOAuth } from './application/ports/google-oauth';
 import { GetMeUseCase } from './application/use-cases/get-me.usecase';
+import { RefreshTokenUseCase } from './application/use-cases/refresh-token.usecase';
+import { LogoutUseCase } from './application/use-cases/logout.usecase';
+import { RefreshTokenRepository } from './domain/repositories/refresh-token.repository';
+import { PrismaRefreshTokenRepository } from './infrastructure/prisma-refresh-token.repository';
 
 
 @Module({
@@ -25,24 +29,29 @@ import { GetMeUseCase } from './application/use-cases/get-me.usecase';
     LoginUseCase,
     LoginWithGoogleUseCase,
     GetMeUseCase,
+    RefreshTokenUseCase,
+    LogoutUseCase,
     {
-        provide: UserRepository,
-        useClass: PrismaUserRepository
-    },{
-        provide: PasswordHasher,
-        useClass: ArgonPasswordHasher
+      provide: UserRepository,
+      useClass: PrismaUserRepository
+    }, {
+      provide: PasswordHasher,
+      useClass: ArgonPasswordHasher
     },
     {
-        provide: TokenService,
-        useClass: JWTTokenService
+      provide: TokenService,
+      useClass: JWTTokenService
     },
     {
-        provide: RandomGenerator,
-        useClass: CryptoRandomGenerator,
-    },{
-       provide: GoogleOAuth,
-       useClass: GoogleOauthClient,
+      provide: RandomGenerator,
+      useClass: CryptoRandomGenerator,
+    }, {
+      provide: GoogleOAuth,
+      useClass: GoogleOauthClient,
+    }, {
+      provide: RefreshTokenRepository,
+      useClass: PrismaRefreshTokenRepository,
     }
   ],
 })
-export class AuthModule {}
+export class AuthModule { }

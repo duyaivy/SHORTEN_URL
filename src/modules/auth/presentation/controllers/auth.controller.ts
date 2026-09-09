@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { RegisterDTO } from "../dtos/register.dto";
 import { LoginDTO } from "../dtos/login.dto";
 import { RegisterUseCase } from "../../application/use-cases/register.usecase";
@@ -10,8 +10,10 @@ import { GetMeUseCase } from "../../application/use-cases/get-me.usecase";
 import { CurrentUserId } from "../decorators/current-user-id.decorator";
 import { ConfigService } from "@nestjs/config";
 import { EnvironmentVariables } from "../../../../shared/config/env.validation";
-import { Response } from "express";
+import { Request, Response } from "express";
 import ms from 'ms';
+import { RefreshTokenUseCase } from "../../application/use-cases/refresh-token.usecase";
+import { LogoutUseCase } from "../../application/use-cases/logout.usecase";
 
 @Controller("auth")
 export class AuthController {
@@ -20,6 +22,8 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private readonly getMeUseCase: GetMeUseCase,
+    private readonly refreshTokenUseCase: RefreshTokenUseCase,
+    private readonly logoutUseCase: LogoutUseCase,
     private readonly configService: ConfigService<EnvironmentVariables, true>
   ) { }
 
@@ -75,6 +79,48 @@ export class AuthController {
     const user = await this.getMeUseCase.execute(userId);
     return ServiceResponse.success("Lấy thông tin cá nhân thành công", user, HttpStatus.OK);
   }
+  @Post('refresh-token')
+  async refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (!refreshToken) {
+      throw new UnauthorizedException('Token is invalid');
+    }
+    const data = await this.refreshTokenUseCase.execute({ refreshToken });
+    const accessExpiration =
+      this.configService.get<string>(
+        'ACCESS_TOKEN_EXPIRATION_TIME',
+      )!;
+    const refreshExpiration =
+      this.configService.get<string>(
+        'REFRESH_TOKEN_EXPIRATION_TIME',
+      )!;
+    // set cookie
+    res.cookie("refresh_token", data.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: ms(refreshExpiration as ms.StringValue),
+    });
+    res.cookie("access_token", data.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: ms(accessExpiration as ms.StringValue),
+    });
 
+    return ServiceResponse.success("Refresh token thành công", data, HttpStatus.OK);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      await this.logoutUseCase.execute({ refreshToken });
+    }
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    return ServiceResponse.success("Đăng xuất thành công", null, HttpStatus.OK);
+  }
 
 }
