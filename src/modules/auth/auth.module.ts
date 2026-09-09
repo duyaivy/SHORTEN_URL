@@ -10,6 +10,11 @@ import { ArgonPasswordHasher } from './infrastructure/argon2-password-hasher';
 import { TokenService } from './application/ports/token';
 import { JWTTokenService } from './infrastructure/jwt-token.services';
 import { LoginUseCase } from './application/use-cases/login.usecase';
+import { RandomGenerator } from './application/ports/random-generator';
+import { CryptoRandomGenerator } from './infrastructure/crypto-random-generator';
+import { LoginWithGoogleUseCase } from './application/use-cases/login-with-google.usecase';
+import { GoogleOauthClient } from './infrastructure/google-oauth.client';
+import { GoogleOAuth } from './application/ports/google-oauth';
 
 
 @Module({
@@ -17,6 +22,7 @@ import { LoginUseCase } from './application/use-cases/login.usecase';
   providers: [
     RegisterUseCase,
     LoginUseCase,
+    LoginWithGoogleUseCase,
     {
         provide: UserRepository,
         useClass: PrismaUserRepository
@@ -28,6 +34,13 @@ import { LoginUseCase } from './application/use-cases/login.usecase';
         provide: TokenService,
         useClass: JWTTokenService
     },
+    {
+        provide: RandomGenerator,
+        useClass: CryptoRandomGenerator,
+    },{
+       provide: GoogleOAuth,
+       useClass: GoogleOauthClient,
+    }
   ],
 })
 export class AuthModule {}

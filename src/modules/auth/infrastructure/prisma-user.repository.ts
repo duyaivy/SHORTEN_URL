@@ -8,12 +8,13 @@ import { UserRepository } from "../domain/repositories/user.repository";
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: { email: string; password: string }): Promise<Omit<User, 'password'>> {
+  async create(data: { email: string; password: string,name?: string, avatar?: string }): Promise<Omit<User, 'password'>> {
     const prismaUser = await this.prisma.user.create({
       data: {
         email: data.email,
         password: data.password,
-        username: data.email,
+        username: data?.name || data.email,
+        avatar_url: data?.avatar || undefined,
       },
     });
 
