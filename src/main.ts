@@ -5,11 +5,11 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { EnvironmentVariables } from './shared/config/env.validation';
-
+import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const configService = app.get(ConfigService<EnvironmentVariables, true>);
-
+  app.use(cookieParser());
   app.enableCors({
     origin: [configService.get('CLIENT_URL', { infer: true }) || true],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

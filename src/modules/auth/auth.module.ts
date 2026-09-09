@@ -15,6 +15,7 @@ import { CryptoRandomGenerator } from './infrastructure/crypto-random-generator'
 import { LoginWithGoogleUseCase } from './application/use-cases/login-with-google.usecase';
 import { GoogleOauthClient } from './infrastructure/google-oauth.client';
 import { GoogleOAuth } from './application/ports/google-oauth';
+import { GetMeUseCase } from './application/use-cases/get-me.usecase';
 
 
 @Module({
@@ -23,6 +24,7 @@ import { GoogleOAuth } from './application/ports/google-oauth';
     RegisterUseCase,
     LoginUseCase,
     LoginWithGoogleUseCase,
+    GetMeUseCase,
     {
         provide: UserRepository,
         useClass: PrismaUserRepository
