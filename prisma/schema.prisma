@@ -16,6 +16,8 @@ model User {
   created_at    DateTime?      @default(now())
   updated_at    DateTime?      @updatedAt
   refreshTokens RefreshToken[]
+  shortUrls     ShortUrl[]
+  qrHistories   QrScanHistory[]
 
   @@map("users")
 }
@@ -29,4 +31,31 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@map("refresh_tokens")
+}
+
+model ShortUrl {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  alias       String    @unique
+  url         String
+  password    String?
+  owner_id    String?   @db.ObjectId
+  owner       User?     @relation(fields: [owner_id], references: [id], onDelete: SetNull)
+  is_active   Boolean   @default(true)
+  views       Int       @default(0)
+  seo_data    Json?
+  exp         DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@map("urls")
+}
+
+model QrScanHistory {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  owner_id    String    @db.ObjectId
+  owner       User      @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  decoded     String
+  created_at  DateTime  @default(now())
+
+  @@map("qr_histories")
 }

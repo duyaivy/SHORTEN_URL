@@ -6,6 +6,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppConfigModule } from './shared/config/config.module';
 import { PrismaModule } from './shared/services/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ShortUrlModule } from './modules/short-url/short-url.module';
 
 @Module({
   imports: [
@@ -55,7 +56,8 @@ import { AuthModule } from './modules/auth/auth.module';
         limit: 60,
       },
     ]),
-    AuthModule
+    AuthModule,
+    ShortUrlModule
   ],
   controllers: [],
   providers: [
