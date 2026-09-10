@@ -13,7 +13,11 @@ import { EnvironmentVariables } from "../../../../shared/config/env.validation";
 import { Request, Response } from "express";
 import ms from 'ms';
 import { RefreshTokenUseCase } from "../../application/use-cases/refresh-token.usecase";
-import { LogoutUseCase } from "../../application/use-cases/logout.usecase";
+import { Throttle } from "@nestjs/throttler";
+import { ForgotPasswordDTO } from "../dtos/forgot-password.dto";
+import { ForgotPasswordUseCase } from "../../application/use-cases/forgot-password.usecase";
+import { ResetPasswordUseCase } from "../../application/use-cases/reset-password.usecase";
+import { ResetPasswordDTO } from "../dtos/reset-password.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -23,7 +27,8 @@ export class AuthController {
     private readonly loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private readonly getMeUseCase: GetMeUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
-    private readonly logoutUseCase: LogoutUseCase,
+    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly configService: ConfigService<EnvironmentVariables, true>
   ) { }
 
@@ -68,17 +73,20 @@ export class AuthController {
 
     return ServiceResponse.success("Đăng nhập thành công", data, HttpStatus.OK);
   }
+
   @Get("oauth")
   async loginWithGoogle(@Query() query: { code: string }) {
     const data = await this.loginWithGoogleUseCase.execute(query);
     return ServiceResponse.success("Đăng nhập thành công", data, HttpStatus.OK);
   }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@CurrentUserId() userId: string) {
     const user = await this.getMeUseCase.execute(userId);
     return ServiceResponse.success("Lấy thông tin cá nhân thành công", user, HttpStatus.OK);
   }
+
   @Post('refresh-token')
   async refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
@@ -110,17 +118,22 @@ export class AuthController {
 
     return ServiceResponse.success("Refresh token thành công", data, HttpStatus.OK);
   }
-
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.refresh_token;
-    if (refreshToken) {
-      await this.logoutUseCase.execute({ refreshToken });
-    }
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
-    return ServiceResponse.success("Đăng xuất thành công", null, HttpStatus.OK);
+  @Throttle({
+    default:
+      { limit: 3, ttl: 60000 }
+  })
+  @Get("forgot-password")
+  async forgotPassword(@Query() query: ForgotPasswordDTO) {
+    const data = await this.forgotPasswordUseCase.execute(query.email);
+    return ServiceResponse.success("Quên mật khẩu thành công", data, HttpStatus.OK);
   }
-
+  @Throttle({
+    default:
+      { limit: 3, ttl: 60000 }
+  })
+  @Post("reset-password")
+  async resetPassword(@Body() body: ResetPasswordDTO) {
+    const data = await this.resetPasswordUseCase.execute(body);
+    return ServiceResponse.success("Đặt lại mật khẩu thành công", data, HttpStatus.OK);
+  }
 }

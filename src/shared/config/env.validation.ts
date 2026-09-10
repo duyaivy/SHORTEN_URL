@@ -151,6 +151,10 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   PASSWORD_SECRET?: string;
+
+  @IsString()
+  @IsOptional()
+  EMAIL_HOST?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

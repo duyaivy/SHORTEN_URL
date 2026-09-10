@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { User as PrismaUser } from "@prisma/client";
 import { PrismaService } from "../../../shared/services/prisma.service";
 import { User } from "../domain/entities/user.entity";
@@ -6,9 +6,9 @@ import { UserRepository } from "../domain/repositories/user.repository";
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
-  async create(data: { email: string; password: string,name?: string, avatar?: string }): Promise<Omit<User, 'password'>> {
+  async create(data: { email: string; password: string, name?: string, avatar?: string }): Promise<Omit<User, 'password'>> {
     const prismaUser = await this.prisma.user.create({
       data: {
         email: data.email,
@@ -21,6 +21,19 @@ export class PrismaUserRepository implements UserRepository {
     const userEntity = this.mapToEntity(prismaUser);
     const { password, ...userWithoutPassword } = userEntity;
     return userWithoutPassword;
+  }
+  async updatePassword(id: string, password: string): Promise<boolean> {
+    try {
+
+      await this.prisma.user.update({
+        where: { id },
+        data: { password },
+      });
+
+    } catch (error) {
+      throw new BadRequestException('Failed to update password');
+    }
+    return true
   }
 
   async findByEmail(email: string): Promise<User | null> {

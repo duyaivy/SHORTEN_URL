@@ -20,6 +20,10 @@ import { RefreshTokenUseCase } from './application/use-cases/refresh-token.useca
 import { LogoutUseCase } from './application/use-cases/logout.usecase';
 import { RefreshTokenRepository } from './domain/repositories/refresh-token.repository';
 import { PrismaRefreshTokenRepository } from './infrastructure/prisma-refresh-token.repository';
+import { ForgotPasswordUseCase } from './application/use-cases/forgot-password.usecase';
+import { ResetPasswordUseCase } from './application/use-cases/reset-password.usecase';
+import { EmailSender } from './application/ports/email-sender';
+import { NodeMailerSender } from './infrastructure/nodemailer-sender';
 
 
 @Module({
@@ -31,6 +35,8 @@ import { PrismaRefreshTokenRepository } from './infrastructure/prisma-refresh-to
     GetMeUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
+    ForgotPasswordUseCase,
+    ResetPasswordUseCase,
     {
       provide: UserRepository,
       useClass: PrismaUserRepository
@@ -45,13 +51,19 @@ import { PrismaRefreshTokenRepository } from './infrastructure/prisma-refresh-to
     {
       provide: RandomGenerator,
       useClass: CryptoRandomGenerator,
-    }, {
+    },
+    {
       provide: GoogleOAuth,
       useClass: GoogleOauthClient,
-    }, {
+    },
+    {
       provide: RefreshTokenRepository,
       useClass: PrismaRefreshTokenRepository,
-    }
+    },
+    {
+      provide: EmailSender,
+      useClass: NodeMailerSender,
+    },
   ],
 })
 export class AuthModule { }
