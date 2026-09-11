@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RegisterDTO } from "../dtos/register.dto";
 import { LoginDTO } from "../dtos/login.dto";
 import { RegisterUseCase } from "../../application/use-cases/register.usecase";
@@ -19,6 +20,7 @@ import { ForgotPasswordUseCase } from "../../application/use-cases/forgot-passwo
 import { ResetPasswordUseCase } from "../../application/use-cases/reset-password.usecase";
 import { ResetPasswordDTO } from "../dtos/reset-password.dto";
 
+@ApiTags('Auth')
 @Controller("auth")
 export class AuthController {
   constructor(
@@ -34,15 +36,24 @@ export class AuthController {
 
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a new account' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Account registered successfully' })
+  @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid input data' })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Email already exists' })
   async register(@Body() body: RegisterDTO) {
     const user = await this.registerUseCase.execute(body);
     return ServiceResponse.success(
-      "Đăng ký tài khoản thành công",
+      "Account registered successfully",
       user,
       HttpStatus.CREATED,
     );
   }
+
   @Post("login")
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Login successful; access & refresh tokens returned via cookies' })
+  @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid input data' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid email or password' })
   async login(
     @Body() body: LoginDTO,
     @Res({ passthrough: true }) res: Response,
@@ -57,7 +68,6 @@ export class AuthController {
       this.configService.get<string>(
         'REFRESH_TOKEN_EXPIRATION_TIME',
       )!;
-    // set cookie
     res.cookie("refresh_token", data.refreshToken, {
       httpOnly: true,
       secure: true,
@@ -71,23 +81,35 @@ export class AuthController {
       maxAge: ms(accessExpiration as ms.StringValue),
     });
 
-    return ServiceResponse.success("Đăng nhập thành công", data, HttpStatus.OK);
+    return ServiceResponse.success("Login successful", data, HttpStatus.OK);
   }
 
   @Get("oauth")
+  @ApiOperation({ summary: 'Login with Google OAuth', description: 'Exchange an authorization code from the Google OAuth flow for tokens' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Google login successful' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid authorization code' })
   async loginWithGoogle(@Query() query: { code: string }) {
     const data = await this.loginWithGoogleUseCase.execute(query);
-    return ServiceResponse.success("Đăng nhập thành công", data, HttpStatus.OK);
+    return ServiceResponse.success("Login successful", data, HttpStatus.OK);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
+  @ApiBearerAuth('access-token')
+  @ApiCookieAuth('access-token-cookie')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Profile retrieved successfully' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Token is invalid or expired' })
   async getMe(@CurrentUserId() userId: string) {
     const user = await this.getMeUseCase.execute(userId);
-    return ServiceResponse.success("Lấy thông tin cá nhân thành công", user, HttpStatus.OK);
+    return ServiceResponse.success("Profile retrieved successfully", user, HttpStatus.OK);
   }
 
   @Post('refresh-token')
+  @ApiCookieAuth('refresh-token-cookie')
+  @ApiOperation({ summary: 'Refresh the access token', description: 'Use the refresh token stored in the cookie to issue a new access token' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Refresh token is invalid or expired' })
   async refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
     if (!refreshToken) {
@@ -102,7 +124,6 @@ export class AuthController {
       this.configService.get<string>(
         'REFRESH_TOKEN_EXPIRATION_TIME',
       )!;
-    // set cookie
     res.cookie("refresh_token", data.refreshToken, {
       httpOnly: true,
       secure: true,
@@ -116,24 +137,35 @@ export class AuthController {
       maxAge: ms(accessExpiration as ms.StringValue),
     });
 
-    return ServiceResponse.success("Refresh token thành công", data, HttpStatus.OK);
+    return ServiceResponse.success("Token refreshed successfully", data, HttpStatus.OK);
   }
+
   @Throttle({
     default:
       { limit: 3, ttl: 60000 }
   })
   @Get("forgot-password")
+  @ApiOperation({ summary: 'Send password reset email', description: 'Rate-limited to 3 requests per minute' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Reset email sent successfully' })
+  @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid email format' })
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many requests' })
   async forgotPassword(@Query() query: ForgotPasswordDTO) {
     const data = await this.forgotPasswordUseCase.execute(query.email);
-    return ServiceResponse.success("Quên mật khẩu thành công", data, HttpStatus.OK);
+    return ServiceResponse.success("Password reset email sent", data, HttpStatus.OK);
   }
+
   @Throttle({
     default:
       { limit: 3, ttl: 60000 }
   })
   @Post("reset-password")
+  @ApiOperation({ summary: 'Reset password', description: 'Use the token received via email to set a new password. Rate-limited to 3 requests per minute' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Password reset successfully' })
+  @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid token or password does not meet requirements' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Token is expired or does not exist' })
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many requests' })
   async resetPassword(@Body() body: ResetPasswordDTO) {
     const data = await this.resetPasswordUseCase.execute(body);
-    return ServiceResponse.success("Đặt lại mật khẩu thành công", data, HttpStatus.OK);
+    return ServiceResponse.success("Password reset successfully", data, HttpStatus.OK);
   }
 }

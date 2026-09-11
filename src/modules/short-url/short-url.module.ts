@@ -24,9 +24,15 @@ import { GetMyQrHistoriesUseCase } from './application/use-cases/get-my-qr-histo
 import { DeleteQrHistoriesUseCase } from './application/use-cases/delete-qr-histories.usecase';
 import { VerifyRecaptchaUseCase } from './application/use-cases/verify-recaptcha.usecase';
 import { ShortUrlController } from './presentation/controllers/short-url.controller';
+import { QrHistoryController } from './presentation/controllers/qr-history.controller';
+import { RecaptchaController } from './presentation/controllers/recaptcha.controller';
 
 @Module({
-  controllers: [ShortUrlController],
+  controllers: [
+    RecaptchaController,
+    QrHistoryController,
+    ShortUrlController,
+  ],
   providers: [
     // Use Cases
     CreateShortUrlUseCase,

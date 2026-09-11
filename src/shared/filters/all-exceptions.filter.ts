@@ -92,4 +92,3 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(statusCode).json(formattedResponse);
   }
 }
-

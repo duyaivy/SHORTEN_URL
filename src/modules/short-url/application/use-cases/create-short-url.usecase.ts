@@ -2,6 +2,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { addDays } from 'date-fns';
 import { EnvironmentVariables } from '../../../../shared/config/env.validation';
@@ -11,7 +12,7 @@ import { PasswordHasher } from '../../../auth/application/ports/password-hasher'
 
 export interface CreateShortUrlInput {
   url: string;
-  alias: string;
+  alias?: string;
   password?: string;
 }
 
@@ -22,17 +23,26 @@ export class CreateShortUrlUseCase {
     private readonly seoPort: SeoPort,
     private readonly passwordHasher: PasswordHasher,
     private readonly configService: ConfigService<EnvironmentVariables, true>,
-  ) {}
+  ) { }
 
   async execute(input: CreateShortUrlInput, userId?: string) {
-    const aliasText = encodeURIComponent(input.alias);
+    const requestedAlias = input.alias?.trim();
+    let aliasText: string;
 
-    const existing = await this.shortUrlRepository.findByAlias(aliasText);
-    if (existing) {
-      throw new UnprocessableEntityException({
-        message: 'Alias đã tồn tại',
-        data: [{ field: 'body.alias', message: 'Alias đã tồn tại' }],
-      });
+    if (requestedAlias) {
+      aliasText = encodeURIComponent(requestedAlias);
+
+      const existing = await this.shortUrlRepository.findByAlias(aliasText);
+      if (existing) {
+        throw new UnprocessableEntityException({
+          message: 'Alias đã tồn tại',
+          data: [{ field: 'body.alias', message: 'Alias đã tồn tại' }],
+        });
+      }
+    } else {
+      do {
+        aliasText = randomBytes(6).toString('base64url');
+      } while (await this.shortUrlRepository.findByAlias(aliasText));
     }
 
     const clientShortLink =
@@ -57,7 +67,7 @@ export class CreateShortUrlUseCase {
       exp,
     });
 
-    const { password, ...result } = record;
+    const { password: _password, ...result } = record;
     return { ...result, short_url: shortUrl };
   }
 }

@@ -19,10 +19,10 @@ export class RefreshTokenUseCase {
         // 1. Decode & validate token type
         const payload = await this.tokenService.decodeToken(input.refreshToken);
         if (!payload || payload.type !== TokenType.REFRESH_TOKEN) {
-            throw new UnauthorizedException("Token Invalid");
+            throw new UnauthorizedException("Invalid token");
         }
 
-        // 2. Kiểm tra has trong DB
+        // 2. Check token hash in DB
         const tokenHash = PrismaRefreshTokenRepository.hashToken(input.refreshToken);
         const storedToken = await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
@@ -31,22 +31,22 @@ export class RefreshTokenUseCase {
             throw new UnauthorizedException("Token reuse detected. All sessions have been revoked.");
         }
 
-        // 3. Kiểm tra token đã hết hạn chưa
+        // 3. Check if token is expired
         if (storedToken.expiresAt < new Date()) {
             await this.refreshTokenRepository.deleteByTokenHash(tokenHash);
             throw new UnauthorizedException("Refresh token expired");
         }
 
-        // 4. Xóa token cũ khỏi DB (rotation)
+        // 4. Delete old token from DB (rotation)
         await this.refreshTokenRepository.deleteByTokenHash(tokenHash);
 
-        // 5. Tạo token mới
+        // 5. Generate new tokens
         const [accessToken, refreshToken] = await Promise.all([
             this.tokenService.generateAccessToken({ userId: payload.userId, type: TokenType.ACCESS_TOKEN }),
             this.tokenService.generateRefreshToken({ userId: payload.userId, type: TokenType.REFRESH_TOKEN }),
         ]);
 
-        // 6. Lưu hash của refresh token mới vào DB
+        // 6. Save new refresh token hash in DB
         const refreshExpirationMs = ms(
             this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME', { infer: true }) as ms.StringValue
         );
