@@ -53,6 +53,9 @@ importers:
       http-status-codes:
         specifier: ^2.3.0
         version: 2.3.0
+      isbot:
+        specifier: ^5.2.2
+        version: 5.2.2
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
@@ -1653,6 +1656,10 @@ packages:
 
   is-unicode-supported@2.1.0:
     resolution: {integrity: sha512-mE00Gnza5EEB3Ds0HfMyllZzbBrmLOX3vfWoj9A9PEnTfratQ/BcaJOuMhnkhjXvb2+FkY3VuHqtAGpTPmglFQ==}
+    engines: {node: '>=18'}
+
+  isbot@5.2.2:
+    resolution: {integrity: sha512-iQcBXcd+Rv/pkubRyGh2utW2j1oPG5hZY6TUhVPpqK4G+o3IbxpJNx04hgksjc/N7GK5pEorUxDeg31cFgEk/w==}
     engines: {node: '>=18'}
 
   isexe@2.0.0:
@@ -3900,6 +3907,8 @@ snapshots:
   is-unicode-supported@0.1.0: {}
 
   is-unicode-supported@2.1.0: {}
+
+  isbot@5.2.2: {}
 
   isexe@2.0.0: {}
 

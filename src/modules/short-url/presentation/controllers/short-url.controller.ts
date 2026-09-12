@@ -3,18 +3,19 @@ import {
   Controller,
   Delete,
   Get,
-  Header,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { isbot } from 'isbot';
 import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ServiceResponse } from '../../../../shared/responses/service-response';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
@@ -160,35 +161,41 @@ export class ShortUrlController {
     return ServiceResponse.success('Short URL updated successfully', data);
   }
 
-  // ─── Get short URL SEO (must be before :alias catch-all) ──
-  @Get('view/resolve/:alias')
-  @Header('Content-Type', 'text/html')
-  @ApiOperation({
-    summary: 'Get SEO metadata HTML for a short URL',
-    description: 'Returns HTML containing Open Graph / meta tags for link previews (used when sharing on social media)',
-  })
-  @ApiParam({ name: 'alias', description: 'Short URL alias', example: 'my-link' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'SEO HTML returned', type: String })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Short URL not found' })
-  async getShortUrlSeo(@Param('alias') alias: string): Promise<string> {
-    return this.getShortUrlSeoUseCase.execute(alias);
-  }
-
-  // ── Get short URL (redirect / resolve) ───────────────────
+  // ─── GET /view/:alias ────────────────────────────────────
+  // Tự động nhận diện User-Agent:
+  //  - Bot/Crawler → Trả HTML SEO Meta (KHÔNG tăng views)
+  //  - Người dùng thật → Trả JSON + tăng views +1
   @Get('view/:alias')
   @ApiOperation({
-    summary: 'Access a short URL (redirect)',
-    description: 'Redirects the user to the original URL associated with the alias',
+    summary: 'Access a short URL (bot-aware)',
+    description:
+      'Detects User-Agent: bots receive SEO HTML meta tags; real users receive JSON with the target URL and views are incremented.',
   })
   @ApiParam({ name: 'alias', description: 'Short URL alias', example: 'my-link' })
-  @ApiResponse({ status: HttpStatus.FOUND, description: 'Redirects to the original URL' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'SEO HTML (for bots) or JSON data (for real users)' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Short URL not found' })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'URL is disabled or requires a password' })
   async getShortUrl(
     @Param('alias') alias: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
+    const userAgent = req.headers['user-agent'] || '';
+
+    // 🤖 Bot / Crawler → Trả HTML SEO Meta, KHÔNG tăng views
+    if (isbot(userAgent)) {
+      const html = await this.getShortUrlSeoUseCase.execute(alias);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.status(HttpStatus.OK).send(html);
+    }
+
+    // 👤 Người dùng thật → Trả JSON + tăng views +1
     const data = await this.getShortUrlUseCase.execute(alias);
-    res.redirect(data.url);
+    return res.status(HttpStatus.OK).json({
+      statusCode: 200,
+      message: 'Lấy URL thành công',
+      success: true,
+      data,
+    });
   }
 }

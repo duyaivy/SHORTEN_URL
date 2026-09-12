@@ -1,20 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { EnvironmentVariables } from '../../../../shared/config/env.validation';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 
 @Injectable()
 export class GetShortUrlUseCase {
   constructor(
     private readonly shortUrlRepository: ShortUrlRepository,
-    private readonly configService: ConfigService<EnvironmentVariables, true>,
   ) {}
 
+  /**
+   * Dành cho người dùng thật:
+   * - Tìm URL theo alias (is_active: true)
+   * - Tự động tăng views +1
+   * - Trả về dữ liệu để FE tự redirect (tránh CORS)
+   */
   async execute(alias: string) {
     const aliasText = encodeURIComponent(alias);
 
     const url =
       await this.shortUrlRepository.findByAliasAndIncrementViews(aliasText);
+
     if (!url) {
       throw new NotFoundException({
         message: 'Không tìm thấy URL',
@@ -22,15 +26,14 @@ export class GetShortUrlUseCase {
       });
     }
 
-    if (url.password) {
-      const clientShortLink =
-        this.configService.get('CLIENT_SHORT_LINK', { infer: true }) || '';
-      const passwordUrl = `${clientShortLink}/password/${aliasText}`;
-      const { password, ...rest } = url;
-      return { ...rest, url: passwordUrl };
-    }
-
-    const { password, ...rest } = url;
-    return rest;
+    // Trả về đúng format spec: { _id, alias, url, views, is_active }
+    // password KHÔNG được trả về client
+    return {
+      _id: url.id,
+      alias: url.alias,
+      url: url.url,
+      views: url.views,
+      is_active: url.is_active,
+    };
   }
 }
