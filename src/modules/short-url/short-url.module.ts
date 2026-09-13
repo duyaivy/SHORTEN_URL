@@ -11,10 +11,14 @@ import { PrismaShortUrlRepository } from './infrastructure/prisma-short-url.repo
 import { PrismaQrScanHistoryRepository } from './infrastructure/prisma-qr-scan-history.repository';
 import { AxiosSeoService } from './infrastructure/axios-seo.service';
 import { GoogleRecaptchaService } from './infrastructure/google-recaptcha.service';
+import { AnalyticsProducer } from './infrastructure/queues/analytics.producer';
+import { AnalyticsFlushScheduler } from './infrastructure/queues/analytics-flush.scheduler';
+import { UrlExpiryScheduler } from './infrastructure/schedulers/url-expiry.scheduler';
 import { CreateShortUrlUseCase } from './application/use-cases/create-short-url.usecase';
 import { GetShortUrlUseCase } from './application/use-cases/get-short-url.usecase';
 import { GetShortUrlSeoUseCase } from './application/use-cases/get-short-url-seo.usecase';
 import { GetShortUrlWithPasswordUseCase } from './application/use-cases/get-short-url-with-password.usecase';
+import { GetShortUrlRedirectUseCase } from './application/use-cases/get-short-url-redirect.usecase';
 import { UpdateUrlUseCase } from './application/use-cases/update-url.usecase';
 import { UpdateUrlActiveUseCase } from './application/use-cases/update-url-active.usecase';
 import { DeleteUrlsUseCase } from './application/use-cases/delete-urls.usecase';
@@ -39,6 +43,7 @@ import { RecaptchaController } from './presentation/controllers/recaptcha.contro
     GetShortUrlUseCase,
     GetShortUrlSeoUseCase,
     GetShortUrlWithPasswordUseCase,
+    GetShortUrlRedirectUseCase,
     UpdateUrlUseCase,
     UpdateUrlActiveUseCase,
     DeleteUrlsUseCase,
@@ -47,6 +52,11 @@ import { RecaptchaController } from './presentation/controllers/recaptcha.contro
     GetMyQrHistoriesUseCase,
     DeleteQrHistoriesUseCase,
     VerifyRecaptchaUseCase,
+    // Analytics (Redis INCR + 30s flush scheduler)
+    AnalyticsProducer,
+    AnalyticsFlushScheduler,
+    // Maintenance schedulers
+    UrlExpiryScheduler,
     // Port bindings
     { provide: ShortUrlRepository, useClass: PrismaShortUrlRepository },
     {

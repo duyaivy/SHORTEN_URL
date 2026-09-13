@@ -13,6 +13,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { isbot } from 'isbot';
 import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -31,6 +32,7 @@ import { CreateShortUrlUseCase } from '../../application/use-cases/create-short-
 import { GetShortUrlUseCase } from '../../application/use-cases/get-short-url.usecase';
 import { GetShortUrlSeoUseCase } from '../../application/use-cases/get-short-url-seo.usecase';
 import { GetShortUrlWithPasswordUseCase } from '../../application/use-cases/get-short-url-with-password.usecase';
+import { GetShortUrlRedirectUseCase } from '../../application/use-cases/get-short-url-redirect.usecase';
 import { UpdateUrlUseCase } from '../../application/use-cases/update-url.usecase';
 import { UpdateUrlActiveUseCase } from '../../application/use-cases/update-url-active.usecase';
 import { DeleteUrlsUseCase } from '../../application/use-cases/delete-urls.usecase';
@@ -44,6 +46,7 @@ export class ShortUrlController {
     private readonly getShortUrlUseCase: GetShortUrlUseCase,
     private readonly getShortUrlSeoUseCase: GetShortUrlSeoUseCase,
     private readonly getShortUrlWithPasswordUseCase: GetShortUrlWithPasswordUseCase,
+    private readonly getShortUrlRedirectUseCase: GetShortUrlRedirectUseCase,
     private readonly updateUrlUseCase: UpdateUrlUseCase,
     private readonly updateUrlActiveUseCase: UpdateUrlActiveUseCase,
     private readonly deleteUrlsUseCase: DeleteUrlsUseCase,
@@ -51,17 +54,19 @@ export class ShortUrlController {
   ) { }
 
   @Post()
+  @Throttle({ create: { limit: 10, ttl: 60000 } })
   @UseGuards(OptionalJwtGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth('access-token')
   @ApiCookieAuth('access-token-cookie')
   @ApiOperation({
     summary: 'Create a new short URL',
-    description: 'Create a short URL. Can be used anonymously, or while authenticated to associate the URL with your account',
+    description: 'Create a short URL. Max 10 per minute per IP. Can be used anonymously, or while authenticated to associate the URL with your account',
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Short URL created successfully' })
   @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid input data' })
   @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Alias already exists' })
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Rate limit exceeded (10 links/min per IP)' })
   async createShortUrl(
     @Body() body: CreateShortUrlDTO,
     @OptionalUserId() userId?: string,
@@ -197,5 +202,26 @@ export class ShortUrlController {
       success: true,
       data,
     });
+  }
+
+  // ─── GET /redirect/:alias ─────────────────────────────────
+  // Không quan tâm bot hay người dùng thật:
+  //  - Không có password → HTTP 302 redirect thẳng về URL gốc (views +1)
+  //  - Có password       → HTTP 302 redirect về {CLIENT_URL}/a/password/{alias}
+  @Get('redirect/:alias')
+  @ApiOperation({
+    summary: 'Redirect a short URL alias (password-aware)',
+    description:
+      'Redirects to the original URL. If the URL is password-protected, redirects to the client password page instead. Does not distinguish between bots and real users.',
+  })
+  @ApiParam({ name: 'alias', description: 'Short URL alias', example: 'my-link' })
+  @ApiResponse({ status: HttpStatus.FOUND, description: 'Redirect to target URL or password page' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Short URL not found or inactive' })
+  async redirectShortUrl(
+    @Param('alias') alias: string,
+    @Res() res: Response,
+  ) {
+    const { redirectUrl } = await this.getShortUrlRedirectUseCase.execute(alias);
+    return res.redirect(HttpStatus.FOUND, redirectUrl);
   }
 }

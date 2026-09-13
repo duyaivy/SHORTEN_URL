@@ -123,6 +123,55 @@ export class PrismaShortUrlRepository implements ShortUrlRepository {
     });
   }
 
+  async findManyByIds(ids: string[]): Promise<ShortUrl[]> {
+    const records = await this.prisma.shortUrl.findMany({
+      where: { id: { in: ids } },
+    });
+    return records.map((r) => this.mapToEntity(r));
+  }
+
+  async bulkIncrementViews(
+    increments: { alias: string; count: number }[],
+  ): Promise<void> {
+    if (increments.length === 0) return;
+    try {
+      // Single Prisma transaction — all updates committed atomically
+      await this.prisma.$transaction(
+        increments.map(({ alias, count }) =>
+          this.prisma.shortUrl.updateMany({
+            where: { alias, is_active: true },
+            data: { views: { increment: count } },
+          }),
+        ),
+      );
+    } catch {
+      // Individual records may have been deleted/deactivated — log handled by caller
+    }
+  }
+
+  async deleteExpiredUrls(): Promise<string[]> {
+    const now = new Date();
+
+    // Find all expired records first to collect aliases for cache invalidation
+    const expired = await this.prisma.shortUrl.findMany({
+      where: {
+        exp: { not: null, lte: now },
+      },
+      select: { alias: true },
+    });
+
+    if (expired.length === 0) return [];
+
+    // Bulk delete in a single query
+    await this.prisma.shortUrl.deleteMany({
+      where: {
+        exp: { not: null, lte: now },
+      },
+    });
+
+    return expired.map((r) => r.alias);
+  }
+
   private mapToEntity(record: {
     id: string;
     alias: string;

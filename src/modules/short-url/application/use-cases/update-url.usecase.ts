@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { makeUrlCacheKey } from '../../../../shared/types/cached-short-url.type';
+import { RedisService } from '../../../../shared/services/redis.service';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 import { PasswordHasher } from '../../../auth/application/ports/password-hasher';
 
@@ -17,13 +19,13 @@ export class UpdateUrlUseCase {
   constructor(
     private readonly shortUrlRepository: ShortUrlRepository,
     private readonly passwordHasher: PasswordHasher,
-  ) {}
+    private readonly redisService: RedisService,
+  ) { }
 
   async execute(alias: string, input: UpdateUrlInput, userId: string) {
     const encodedAlias = encodeURIComponent(alias);
 
-    const existing =
-      await this.shortUrlRepository.findByAlias(encodedAlias);
+    const existing = await this.shortUrlRepository.findByAlias(encodedAlias);
     if (!existing || existing.owner_id !== userId) {
       throw new NotFoundException({
         message: 'Không tìm thấy URL',
@@ -53,10 +55,7 @@ export class UpdateUrlUseCase {
         : null;
     }
 
-    const updated = await this.shortUrlRepository.update(
-      existing.id,
-      updateData,
-    );
+    const updated = await this.shortUrlRepository.update(existing.id, updateData);
 
     if (!updated) {
       throw new NotFoundException({
@@ -64,6 +63,13 @@ export class UpdateUrlUseCase {
         data: [{ field: 'params.alias', message: 'URL không tồn tại' }],
       });
     }
+
+
+    const keysToDelete = [makeUrlCacheKey(encodedAlias)];
+    if (updateData.alias && updateData.alias !== encodedAlias) {
+      keysToDelete.push(makeUrlCacheKey(updateData.alias));
+    }
+    await this.redisService.del(...keysToDelete);
 
     const { password, ...rest } = updated;
     return rest;

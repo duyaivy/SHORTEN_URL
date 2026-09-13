@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EnvironmentVariables } from '../../../../shared/config/env.validation';
 import {
   CachedShortUrl,
   makeUrlCacheKey,
@@ -9,25 +11,24 @@ import { RedisService } from '../../../../shared/services/redis.service';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 import { AnalyticsProducer } from '../../infrastructure/queues/analytics.producer';
 
-/**
- * Dành cho người dùng thật (non-bot):
- * - Cache-Aside: đọc từ Redis trước, fallback DB nếu miss
- * - Views tăng bất đồng bộ qua analytics queue (không block response)
- * - Trả về dữ liệu để FE tự redirect (tránh CORS)
- */
+export interface RedirectResult {
+  redirectUrl: string;
+  hasPassword: boolean;
+}
+
 @Injectable()
-export class GetShortUrlUseCase {
+export class GetShortUrlRedirectUseCase {
   constructor(
     private readonly shortUrlRepository: ShortUrlRepository,
     private readonly redisService: RedisService,
     private readonly analyticsProducer: AnalyticsProducer,
-  ) {}
+    private readonly configService: ConfigService<EnvironmentVariables>,
+  ) { }
 
-  async execute(alias: string) {
+  async execute(alias: string): Promise<RedirectResult> {
     const aliasText = encodeURIComponent(alias);
     const cacheKey = makeUrlCacheKey(aliasText);
 
-    // ── 1. Cache lookup ───────────────────────────────────────
     let urlData: CachedShortUrl | undefined;
 
     const cached = await this.redisService.get<CachedShortUrl>(cacheKey);
@@ -44,7 +45,7 @@ export class GetShortUrlUseCase {
     } else {
       const url = await this.shortUrlRepository.findByAlias(aliasText);
 
-      if (!url) {
+      if (!url || !url.is_active) {
         await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
         throw new NotFoundException({
           message: 'Không tìm thấy URL',
@@ -67,15 +68,20 @@ export class GetShortUrlUseCase {
       await this.redisService.set(cacheKey, urlData, URL_CACHE_TTL);
     }
 
-    // ── 2. Async analytics ────────────────────────────────────
+    if (urlData.password) {
+      const clientUrl =
+        this.configService.get('CLIENT_URL', { infer: true }) || '';
+      return {
+        redirectUrl: `${clientUrl}/a/password/${alias}`,
+        hasPassword: true,
+      };
+    }
+
     await this.analyticsProducer.pushClickEvent(aliasText);
 
     return {
-      _id: urlData.id,
-      alias: urlData.alias,
-      url: urlData.url,
-      views: urlData.views, // may be slightly stale; processor will refresh cache after increment
-      is_active: urlData.is_active,
+      redirectUrl: urlData.url,
+      hasPassword: false,
     };
   }
 }

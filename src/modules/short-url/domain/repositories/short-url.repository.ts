@@ -57,4 +57,12 @@ export abstract class ShortUrlRepository {
   ): Promise<void>;
 
   abstract deleteByIdsAndOwner(ids: string[], owner_id: string): Promise<void>;
+  abstract findManyByIds(ids: string[]): Promise<ShortUrl[]>;
+
+
+  abstract bulkIncrementViews(
+    increments: { alias: string; count: number }[],
+  ): Promise<void>;
+
+  abstract deleteExpiredUrls(): Promise<string[]>;
 }

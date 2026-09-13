@@ -155,6 +155,15 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   EMAIL_HOST?: string;
+
+  // Redis
+  @IsString()
+  @IsOptional()
+  REDIS_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  SERVER_ALIAS_URL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
