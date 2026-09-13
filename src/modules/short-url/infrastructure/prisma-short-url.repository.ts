@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../shared/services/prisma.service';
+import { PrismaService } from '../../../shared/services/prisma/prisma.service';
 import { ShortUrl, SeoData } from '../domain/entities/short-url.entity';
 import {
   PaginationParams,
@@ -8,7 +8,7 @@ import {
 
 @Injectable()
 export class PrismaShortUrlRepository implements ShortUrlRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(data: {
     alias: string;

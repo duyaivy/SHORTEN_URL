@@ -3,7 +3,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { makeUrlCacheKey } from '../../../../shared/types/cached-short-url.type';
-import { RedisService } from '../../../../shared/services/redis.service';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 import { PasswordHasher } from '../../../auth/application/ports/password-hasher';
 

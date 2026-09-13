@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { RedisService } from '../../../../shared/services/redis.service';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
 import { makeUrlCacheKey } from '../../../../shared/types/cached-short-url.type';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 import { VIEWS_KEY_PREFIX } from './analytics.producer';
@@ -26,7 +26,7 @@ export class AnalyticsFlushScheduler {
   constructor(
     private readonly redisService: RedisService,
     private readonly shortUrlRepository: ShortUrlRepository,
-  ) {}
+  ) { }
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async flushViews(): Promise<void> {

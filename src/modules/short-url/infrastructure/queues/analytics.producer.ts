@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '../../../../shared/services/redis.service';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
 
 /** Redis key prefix for pending click counters */
 export const VIEWS_KEY_PREFIX = 'views:';
@@ -20,7 +20,7 @@ export const VIEWS_KEY_PREFIX = 'views:';
 export class AnalyticsProducer {
   private readonly logger = new Logger(AnalyticsProducer.name);
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(private readonly redisService: RedisService) { }
 
   /**
    * Record a click for the given alias.

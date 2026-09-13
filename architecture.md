@@ -33,14 +33,14 @@ Hệ thống có tỷ lệ Read:Write cao (~100:1), do đó Caching đóng vai t
 
 Giảm thiểu tối đa độ trễ (Latency) cho người dùng bằng cách đẩy tất cả tác vụ phụ thuộc vào luồng xử lý bất đồng bộ (Asynchronous).
 
-- [ ] **Crawl Metadata khi tạo Link:**
-  - Người dùng bấm "Tạo Link" -> Trả về mã Short URL ngay lập tức.
-  - Push một Event `CRAWL_METADATA` vào **Message Queue** (BullMQ / RabbitMQ).
-  - Worker chạy ngầm bóc tách HTML trang gốc, cào thông tin OpenGraph và update ngược lại Database/Cache.
-- [ ] **Tracking Analytics (Lượt click, IP, Thiết bị):**
-  - Luồng Redirect chỉ trả về Header `Location: long_url`.
-  - Song song đó, ném Event `CLICK_LOGGED` vào Queue.
-  - Analytics Worker chịu trách nhiệm thu gom log (Batch Processing) và ghi nhận số liệu định kỳ vào DB để tránh nghẽn I/O.
+- [x] **Direct HTTP 302 Redirect (Loại bỏ SEO Crawl):**
+  - Không cần crawl metadata khi tạo link hay render HTML meta nữa (giảm tải 100% network latency & CPU).
+  - Sử dụng **Direct HTTP 302 Redirect**:
+    - **Không có password**: HTTP 302 chuyển hướng trực tiếp tới URL đích. Mọi Bot / Crawler (Facebook, Google, Zalo, Twitter...) đều tự động follow 302 để lấy OpenGraph trực tiếp từ trang gốc.
+    - **Có password**: HTTP 302 chuyển hướng tới trang nhập mật khẩu Frontend (`${CLIENT_URL}/a/password/${alias}?alias=${alias}`).
+- [x] **Tracking Analytics (Batch Mode via Redis INCR):**
+  - Luồng Redirect chỉ thực hiện Redis `INCR views:{alias}` (~0.1ms) rồi redirect ngay lập tức mà không block response.
+  - Scheduler (`AnalyticsFlushScheduler`) chạy ngầm mỗi 30s gom batch tất cả lượt click ghi vào DB trong 1 transaction duy nhất.
 
 ---
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../shared/services/prisma.service';
+import { PrismaService } from '../../../shared/services/prisma/prisma.service';
 import { QrScanHistory } from '../domain/entities/qr-scan-history.entity';
 import {
   PaginationParams,
@@ -8,7 +8,7 @@ import {
 
 @Injectable()
 export class PrismaQrScanHistoryRepository implements QrScanHistoryRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async upsert(data: { owner_id: string; decoded: string }): Promise<QrScanHistory> {
     const record = await this.prisma.qrScanHistory.upsert({

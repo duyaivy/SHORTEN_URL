@@ -1,150 +1,75 @@
-# 📄 Tài Liệu Kỹ Thuật: Xử Lý Endpoint Short URL (`GET /view/:alias`)
+# 📄 Tài Liệu Kỹ Thuật: Xử Lý Endpoint Short URL Direct Redirect (`GET /view/:alias`)
 
-Tài liệu này mô tả chi tiết logic xử lý nghiệp vụ và kỹ thuật của endpoint `GET /view/:alias` phục vụ cho việc bàn giao hoặc tái cấu trúc trên hệ thống mới bằng **NestJS**.
+Tài liệu mô tả chi tiết luồng chuyển hướng trực tiếp (Direct HTTP 302 Redirect) cho hệ thống rút gọn URL trên **NestJS**.
 
 ---
 
 ## 1. Mạch Xử Lý Tổng Quan (Overview)
 
-Endpoint `GET /view/:alias` đảm nhận hai chức năng song song:
-1. **Trả về Link Preview (SEO Meta Tags)** cho các Bot / Crawler mạng xã hội (Facebook, Zalo, Telegram, Google, Twitter...).
-2. **Trả về dữ liệu điều hướng (JSON)** cho Người dùng thật (Trình duyệt) và **tự động tăng lượt xem (`views`)**.
-
-- **Đường dẫn (Route)**: `GET /view/:alias`
-- **Cơ chế**: Tự động nhận diện `User-Agent` tại tầng Backend.
+Hệ thống sử dụng cơ chế **Direct HTTP 302 Redirect** thuần túy:
+- **Tốc độ tối đa**: Không crawl metadata trang đích khi tạo link, không sinh trang HTML tĩnh trung gian.
+- **Tương thích hoàn hảo với Bot / Crawler**: Tất cả các crawler (Facebook, Google, Zalo, Twitter, Telegram...) đều tự động follow mã HTTP 302 Redirect để lấy OpenGraph / Meta data trực tiếp từ trang đích gốc.
+- **Bảo mật**: Nếu link có mật khẩu, tự động chuyển hướng người dùng đến giao diện nhập mật khẩu của Frontend.
+- **Hiệu năng cao**: Tăng lượt xem bất đồng bộ qua Redis `INCR` và ghi nhận định kỳ (Batching) vào Database, không làm nghẽn phản hồi.
 
 ```
-                    [ Request: GET /view/:alias ]
-                                  │
-                       Kiểm tra User-Agent
-                                  │
-               ┌──────────────────┴──────────────────┐
-               ▼                                     ▼
-        [ Là BOT / Crawler ]                 [ Là Người dùng thật ]
-               │                                     │
-   - Lấy dữ liệu SEO Meta               - Lấy dữ liệu URL gốc
-   - Trả về: HTML (`text/html`)         - Tăng lượt xem DB (`views + 1`)
-   - Lượt xem DB: KHÔNG TĂNG              - Trả về: JSON (`application/json`)
+                                [ Request: GET /view/:alias ]
+                                              │
+                                  Kiểm tra Cache Redis
+                                              │
+                           ┌──────────────────┴──────────────────┐
+                           ▼                                     ▼
+                      [ Cache Hit ]                         [ Cache Miss ]
+                           │                                     │
+                           │                              Đọc từ MongoDB
+                           │                         (Nếu không thấy: Cache Null 60s)
+                           │                                     │
+                           └──────────────────┬──────────────────┘
+                                              │
+                                     Kiểm tra Mật khẩu?
+                                              │
+                           ┌──────────────────┴──────────────────┐
+                           ▼                                     ▼
+                   [ Có Mật khẩu ]                       [ Không có Mật khẩu ]
+                           │                                     │
+              Redirect HTTP 302 về:                 - Ghi nhận click: Redis INCR views:{alias}
+     `${CLIENT_URL}/a/password/${alias}?alias=${alias}`   - Redirect HTTP 302 trực tiếp về URL đích:
+                                                            `res.redirect(302, originalUrl)`
 ```
 
 ---
 
-## 2. Chi Tiết Logic Xử Lý (Detailed Business Logic)
+## 2. Chi Tiết Logic Nghiệp Vụ (Business Logic)
 
-### 🔍 Bước 1: Nhận diện Bot / Crawler (`isBot`)
-- Đọc chuỗi `User-Agent` từ HTTP Request Header: `req.headers['user-agent']`.
-- Sử dụng thư viện `isbot` (`isbot(userAgent)`). Thư viện này chứa danh sách quy tắc nhận diện tất cả các crawler/bot lớn trên toàn cầu:
-  - Facebook: `facebookexternalhit`
-  - Telegram: `TelegramBot`
-  - Zalo: `ZaloBot` / `ZaloWeb`
-  - Twitter / X: `Twitterbot`
-  - Discord, WhatsApp, LinkedIn, Googlebot, Bingbot...
-
----
-
-### 🤖 Bước 2A: Xử lý khi là BOT / Crawler Mạng Xã Hội
-1. Truy vấn Database tìm record URL theo `alias` và `is_active: true`.
-2. **KHÔNG tăng số lượt xem (`views`)** trong Database.
-3. Cấu hình Header Response: `Content-Type: text/html; charset=utf-8`.
-4. Trả về cấu trúc trang HTML tĩnh chứa các thẻ Meta/Open Graph:
-   - **Trường hợp Link hợp lệ**:
-     ```html
-     <!DOCTYPE html>
-     <html lang="en">
-     <head>
-         <meta property="og:title" content="${title}" />
-         <meta property="og:description" content="${description}" />
-         <meta property="og:image" content="${image_url}" />
-         <meta property="og:site_name" content="${site_name}" />
-         <meta property="og:url" content="${og_url}" />
-         <meta name="description" content="${description}" />
-         <meta name="keywords" content="${keywords}" />
-         <title>${title}</title>
-     </head>
-     <body>Redirecting...</body>
-     </html>
-     ```
-   - **Trường hợp Link có mật khẩu**: Trả về HTML Meta thông báo *"Protected Link | ShortLink - Liên kết được bảo vệ bằng mật khẩu"*.
-   - **Trường hợp Link không tồn tại / Ngưng kích hoạt**: Trả về HTML Meta thông báo *"Link Not Found | ShortLink - Liên kết không tồn tại"*.
+### 🚀 Bước 1: Cache-Aside Lookup & Chống Cache Penetration
+1. Tra cứu khóa `url:{alias}` trong Redis.
+2. Nếu gặp giá trị sentinel `__NULL__`: Link không tồn tại hoặc đã bị tắt $\to$ Trả về `404 Not Found` ngay lập tức mà không truy vấn Database.
+3. Nếu Cache Hit:
+   - Kiểm tra hạn sử dụng `exp`: Nếu đã hết hạn $\to$ Xóa cache, set Null sentinel, ném `404 Not Found`.
+   - Lấy dữ liệu từ Redis.
+4. Nếu Cache Miss:
+   - Truy vấn MongoDB theo `alias` và `is_active: true`.
+   - Nếu không tìm thấy hoặc đã hết hạn: Lưu `setNull(cacheKey, 60)` trong 60 giây và trả về `404 Not Found`.
+   - Nếu tìm thấy: Lưu dữ liệu vào Redis với TTL 1 giờ (`URL_CACHE_TTL = 3600s`).
 
 ---
 
-### 👤 Bước 2B: Xử lý khi là NGƯỜI DÙNG THẬT (Trình duyệt)
-1. Truy vấn Database tìm record URL theo `alias` và `is_active: true`.
-2. **Tự động tăng số lượt xem (`views`) thêm +1** trong Database bằng toán tử `$inc: { views: 1 }`.
-3. Cấu hình Header Response: `Content-Type: application/json; charset=utf-8`.
-4. Trả về đối tượng JSON:
-   ```json
-   {
-     "statusCode": 200,
-     "message": "Lấy URL thành công",
-     "success": true,
-     "data": {
-       "_id": "60f4a98152e242248085b127355d11af",
-       "alias": "ccc",
-       "url": "https://goc-target.com",
-       "views": 15,
-       "is_active": true
-     }
-   }
-   ```
-5. **Xử lý tại Frontend**: FE nhận JSON chứa `data.url` và chủ động chuyển hướng bằng `window.location.href = data.url` (tránh hoàn toàn rủi ro bị lỗi CORS).
+### 🔒 Bước 2: Phân luồng Mật khẩu (Password Protection)
+- **Trường hợp 1 (Có mật khẩu)**:
+  - Header: `Location: ${CLIENT_URL}/a/password/${alias}?alias=${alias}`
+  - Status: `302 Found`
+  - Người dùng truy cập trang nhập mật khẩu trên Frontend. Khi nhập đúng mật khẩu, Frontend gọi `POST /view/:alias` với body `{ password }` để lấy URL gốc.
+- **Trường hợp 2 (Không có mật khẩu)**:
+  - Gọi bất đồng bộ `analyticsProducer.pushClickEvent(alias)` (Redis `INCR views:{alias}`).
+  - Header: `Location: ${originalUrl}`
+  - Status: `302 Found`
+  - Trình duyệt hoặc Crawler tự động điều hướng sang trang đích.
 
 ---
 
-## 3. Mã Nguồn Mẫu Triển Khai Trên NestJS (NestJS Implementation)
-
-### 📦 1. Cài đặt thư viện:
-```bash
-npm install isbot
-```
-
-### 🛠️ 2. Controller trong NestJS (`url.controller.ts`):
-```typescript
-import { Controller, Get, Param, Req, Res, HttpStatus } from '@nestjs/common';
-import { Response, Request } from 'express';
-import { isbot } from 'isbot';
-import { UrlService } from './url.service';
-
-@Controller('view')
-export class UrlController {
-  constructor(private readonly urlService: UrlService) {}
-
-  @Get(':alias')
-  async getShortUrl(
-    @Param('alias') alias: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const userAgent = req.headers['user-agent'] || '';
-
-    // 🤖 Nếu phát hiện là Bot -> Trả về HTML SEO Meta
-    if (isbot(userAgent)) {
-      const html = await this.urlService.getShortUrlSEO(alias);
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.status(HttpStatus.OK).send(html);
-    }
-
-    // 👤 Nếu là Người dùng thật -> Trả về JSON & tăng views +1
-    const data = await this.urlService.getShortUrl(alias);
-    return res.status(HttpStatus.OK).json({
-      statusCode: 200,
-      message: 'Lấy URL thành công',
-      success: true,
-      data,
-    });
-  }
-}
-```
-
-### 🌐 3. Yêu cầu Cấu hình Nginx (Reverse Proxy)
-Nginx trên server production chỉ làm Reverse Proxy đơn thuần và chuyển tiếp `User-Agent`:
-```nginx
-location /view/ {
-    proxy_pass http://localhost:3000/view/;
-    proxy_set_header Host $host;
-    proxy_set_header User-Agent $http_user_agent;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-}
-```
+### ⏱️ Bước 3: Batch Flush Analytics (Ghi nhận lượt xem)
+- `AnalyticsFlushScheduler` chạy ngầm mỗi 30 giây:
+  1. `SCAN` các key `views:*` trong Redis.
+  2. Dùng Pipeline lấy số đếm và xóa key (`GET + DEL`).
+  3. Bulk update MongoDB bằng một transaction duy nhất (`$transaction` + `$inc`).
+  4. Invalidate cache `url:{alias}` để đảm bảo lần đọc tiếp theo có số lượt view mới nhất.

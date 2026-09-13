@@ -5,18 +5,14 @@ import { TokenService } from '../auth/application/ports/token';
 import { JWTTokenService } from '../auth/infrastructure/jwt-token.services';
 import { ShortUrlRepository } from './domain/repositories/short-url.repository';
 import { QrScanHistoryRepository } from './domain/repositories/qr-scan-history.repository';
-import { SeoPort } from './application/ports/seo.port';
 import { RecaptchaPort } from './application/ports/recaptcha.port';
 import { PrismaShortUrlRepository } from './infrastructure/prisma-short-url.repository';
 import { PrismaQrScanHistoryRepository } from './infrastructure/prisma-qr-scan-history.repository';
-import { AxiosSeoService } from './infrastructure/axios-seo.service';
 import { GoogleRecaptchaService } from './infrastructure/google-recaptcha.service';
 import { AnalyticsProducer } from './infrastructure/queues/analytics.producer';
 import { AnalyticsFlushScheduler } from './infrastructure/queues/analytics-flush.scheduler';
 import { UrlExpiryScheduler } from './infrastructure/schedulers/url-expiry.scheduler';
 import { CreateShortUrlUseCase } from './application/use-cases/create-short-url.usecase';
-import { GetShortUrlUseCase } from './application/use-cases/get-short-url.usecase';
-import { GetShortUrlSeoUseCase } from './application/use-cases/get-short-url-seo.usecase';
 import { GetShortUrlWithPasswordUseCase } from './application/use-cases/get-short-url-with-password.usecase';
 import { GetShortUrlRedirectUseCase } from './application/use-cases/get-short-url-redirect.usecase';
 import { UpdateUrlUseCase } from './application/use-cases/update-url.usecase';
@@ -40,8 +36,6 @@ import { RecaptchaController } from './presentation/controllers/recaptcha.contro
   providers: [
     // Use Cases
     CreateShortUrlUseCase,
-    GetShortUrlUseCase,
-    GetShortUrlSeoUseCase,
     GetShortUrlWithPasswordUseCase,
     GetShortUrlRedirectUseCase,
     UpdateUrlUseCase,
@@ -63,7 +57,6 @@ import { RecaptchaController } from './presentation/controllers/recaptcha.contro
       provide: QrScanHistoryRepository,
       useClass: PrismaQrScanHistoryRepository,
     },
-    { provide: SeoPort, useClass: AxiosSeoService },
     { provide: RecaptchaPort, useClass: GoogleRecaptchaService },
     { provide: PasswordHasher, useClass: ArgonPasswordHasher },
     { provide: TokenService, useClass: JWTTokenService },

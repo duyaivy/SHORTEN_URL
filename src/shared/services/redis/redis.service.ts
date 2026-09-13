@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { EnvironmentVariables } from '../config/env.validation';
+import { EnvironmentVariables } from '../../config/env.validation';
 
 /** Sentinel string stored in Redis when a key is known to not exist (null cache). */
 const NULL_SENTINEL = '__NULL__';
@@ -22,14 +22,21 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   ) { }
 
   onModuleInit(): void {
-    const url =
+    let url =
       this.configService.get('REDIS_URL', { infer: true }) ||
       'redis://localhost:6379';
+
+    // Upstash Redis requires TLS (rediss://)
+    if (url.includes('upstash.io') && url.startsWith('redis://')) {
+      url = url.replace('redis://', 'rediss://');
+    }
 
     this.client = new Redis(url, {
       lazyConnect: true,
       enableReadyCheck: true,
       maxRetriesPerRequest: null,
+      connectTimeout: 10000,
+      retryStrategy: (times) => Math.min(times * 1000, 5000),
     });
 
     this.client.on('ready', () => {

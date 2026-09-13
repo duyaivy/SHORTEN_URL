@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { makeUrlCacheKey } from '../../../../shared/types/cached-short-url.type';
-import { RedisService } from '../../../../shared/services/redis.service';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class DeleteUrlsUseCase {
   constructor(
     private readonly shortUrlRepository: ShortUrlRepository,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async execute(ids: string[], userId: string): Promise<void> {
     // ── Fetch aliases for cache invalidation BEFORE deleting ──

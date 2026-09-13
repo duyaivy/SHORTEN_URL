@@ -7,7 +7,7 @@ import {
   URL_CACHE_TTL,
   URL_NULL_CACHE_TTL,
 } from '../../../../shared/types/cached-short-url.type';
-import { RedisService } from '../../../../shared/services/redis.service';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 import { AnalyticsProducer } from '../../infrastructure/queues/analytics.producer';
 
@@ -41,11 +41,19 @@ export class GetShortUrlRedirectUseCase {
     }
 
     if (cached !== undefined) {
+      if (cached.exp && new Date(cached.exp) <= new Date()) {
+        await this.redisService.del(cacheKey);
+        await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
+        throw new NotFoundException({
+          message: 'Không tìm thấy URL',
+          data: [{ field: 'params.alias', message: 'URL không tồn tại hoặc đã hết hạn' }],
+        });
+      }
       urlData = cached;
     } else {
       const url = await this.shortUrlRepository.findByAlias(aliasText);
 
-      if (!url || !url.is_active) {
+      if (!url || !url.is_active || (url.exp && new Date(url.exp) <= new Date())) {
         await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
         throw new NotFoundException({
           message: 'Không tìm thấy URL',
@@ -72,7 +80,7 @@ export class GetShortUrlRedirectUseCase {
       const clientUrl =
         this.configService.get('CLIENT_URL', { infer: true }) || '';
       return {
-        redirectUrl: `${clientUrl}/a/password/${alias}`,
+        redirectUrl: `${clientUrl}/a/password/${alias}?alias=${alias}`,
         hasPassword: true,
       };
     }

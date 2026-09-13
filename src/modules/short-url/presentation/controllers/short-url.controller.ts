@@ -14,9 +14,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { isbot } from 'isbot';
 import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { ServiceResponse } from '../../../../shared/responses/service-response';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
@@ -29,8 +28,6 @@ import { UpdateUrlActiveDTO } from '../dtos/update-url-active.dto';
 import { DeleteIdsDTO } from '../dtos/delete-ids.dto';
 import { PaginationDTO } from '../dtos/pagination.dto';
 import { CreateShortUrlUseCase } from '../../application/use-cases/create-short-url.usecase';
-import { GetShortUrlUseCase } from '../../application/use-cases/get-short-url.usecase';
-import { GetShortUrlSeoUseCase } from '../../application/use-cases/get-short-url-seo.usecase';
 import { GetShortUrlWithPasswordUseCase } from '../../application/use-cases/get-short-url-with-password.usecase';
 import { GetShortUrlRedirectUseCase } from '../../application/use-cases/get-short-url-redirect.usecase';
 import { UpdateUrlUseCase } from '../../application/use-cases/update-url.usecase';
@@ -43,8 +40,6 @@ import { GetMyUrlsUseCase } from '../../application/use-cases/get-my-urls.usecas
 export class ShortUrlController {
   constructor(
     private readonly createShortUrlUseCase: CreateShortUrlUseCase,
-    private readonly getShortUrlUseCase: GetShortUrlUseCase,
-    private readonly getShortUrlSeoUseCase: GetShortUrlSeoUseCase,
     private readonly getShortUrlWithPasswordUseCase: GetShortUrlWithPasswordUseCase,
     private readonly getShortUrlRedirectUseCase: GetShortUrlRedirectUseCase,
     private readonly updateUrlUseCase: UpdateUrlUseCase,
@@ -167,57 +162,19 @@ export class ShortUrlController {
   }
 
   // ─── GET /view/:alias ────────────────────────────────────
-  // Tự động nhận diện User-Agent:
-  //  - Bot/Crawler → Trả HTML SEO Meta (KHÔNG tăng views)
-  //  - Người dùng thật → Trả JSON + tăng views +1
+  // Direct HTTP 302 Redirect:
+  //  - Không có password → HTTP 302 redirect thẳng về URL gốc (views +1 qua Redis INCR)
+  //  - Có password       → HTTP 302 redirect về {CLIENT_URL}/a/password/{alias}?alias={alias}
   @Get('view/:alias')
   @ApiOperation({
-    summary: 'Access a short URL (bot-aware)',
+    summary: 'Access and redirect short URL',
     description:
-      'Detects User-Agent: bots receive SEO HTML meta tags; real users receive JSON with the target URL and views are incremented.',
-  })
-  @ApiParam({ name: 'alias', description: 'Short URL alias', example: 'my-link' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'SEO HTML (for bots) or JSON data (for real users)' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Short URL not found' })
-  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'URL is disabled or requires a password' })
-  async getShortUrl(
-    @Param('alias') alias: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const userAgent = req.headers['user-agent'] || '';
-
-    // 🤖 Bot / Crawler → Trả HTML SEO Meta, KHÔNG tăng views
-    if (isbot(userAgent)) {
-      const html = await this.getShortUrlSeoUseCase.execute(alias);
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return res.status(HttpStatus.OK).send(html);
-    }
-
-    // 👤 Người dùng thật → Trả JSON + tăng views +1
-    const data = await this.getShortUrlUseCase.execute(alias);
-    return res.status(HttpStatus.OK).json({
-      statusCode: 200,
-      message: 'Lấy URL thành công',
-      success: true,
-      data,
-    });
-  }
-
-  // ─── GET /redirect/:alias ─────────────────────────────────
-  // Không quan tâm bot hay người dùng thật:
-  //  - Không có password → HTTP 302 redirect thẳng về URL gốc (views +1)
-  //  - Có password       → HTTP 302 redirect về {CLIENT_URL}/a/password/{alias}
-  @Get('redirect/:alias')
-  @ApiOperation({
-    summary: 'Redirect a short URL alias (password-aware)',
-    description:
-      'Redirects to the original URL. If the URL is password-protected, redirects to the client password page instead. Does not distinguish between bots and real users.',
+      'Directly redirects to the target URL (HTTP 302). If the URL is password-protected, redirects to the client password page.',
   })
   @ApiParam({ name: 'alias', description: 'Short URL alias', example: 'my-link' })
   @ApiResponse({ status: HttpStatus.FOUND, description: 'Redirect to target URL or password page' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Short URL not found or inactive' })
-  async redirectShortUrl(
+  async getShortUrl(
     @Param('alias') alias: string,
     @Res() res: Response,
   ) {

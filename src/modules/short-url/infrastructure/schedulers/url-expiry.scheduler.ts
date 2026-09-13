@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { RedisService } from '../../../../shared/services/redis.service';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
 import { makeUrlCacheKey } from '../../../../shared/types/cached-short-url.type';
 import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
 
@@ -21,7 +21,7 @@ export class UrlExpiryScheduler {
   constructor(
     private readonly shortUrlRepository: ShortUrlRepository,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async deleteExpiredUrls(): Promise<void> {
