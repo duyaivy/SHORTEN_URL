@@ -43,9 +43,9 @@ export class CreateShortUrlUseCase {
       } while (await this.shortUrlRepository.findByAlias(aliasText));
     }
 
-    const clientShortLink =
-      this.configService.get('CLIENT_SHORT_LINK', { infer: true }) || '';
-    const shortUrl = `${clientShortLink}/${aliasText}`;
+    const serverAliasShortLink =
+      this.configService.get('SERVER_ALIAS_URL', { infer: true }) || '';
+    const shortUrl = `${serverAliasShortLink}/${aliasText}`;
 
     const hashedPassword = input.password
       ? await this.passwordHasher.hash(input.password)

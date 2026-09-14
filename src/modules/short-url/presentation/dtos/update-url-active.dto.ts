@@ -14,7 +14,7 @@ export class UrlActiveItem {
     example: 'abc123',
   })
   @IsString()
-  _id: string;
+  id: string;
 
   @ApiProperty({
     description: 'Active status',

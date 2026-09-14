@@ -164,7 +164,7 @@ export class ShortUrlController {
   // ─── GET /view/:alias ────────────────────────────────────
   // Direct HTTP 302 Redirect:
   //  - Không có password → HTTP 302 redirect thẳng về URL gốc (views +1 qua Redis INCR)
-  //  - Có password       → HTTP 302 redirect về {CLIENT_URL}/a/password/{alias}?alias={alias}
+  //  - Có password       → HTTP 302 redirect về {CLIENT_URL}/password/{alias}?alias={alias}
   @Get('view/:alias')
   @ApiOperation({
     summary: 'Access and redirect short URL',

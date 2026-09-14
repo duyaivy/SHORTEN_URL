@@ -1,4 +1,5 @@
-import { HttpStatus, ValidationPipe } from '@nestjs/common';
+import { HttpStatus, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
+import { ValidationError } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
@@ -24,7 +25,17 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
-      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
+      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const validationErrors = errors.flatMap((error) =>
+          flattenValidationErrors(error),
+        );
+
+        return new UnprocessableEntityException({
+          message: 'Lỗi xác thực dữ liệu',
+          data: validationErrors,
+        });
+      },
     }),
 
   );
@@ -79,3 +90,21 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+function flattenValidationErrors(
+  error: ValidationError,
+  parentPath = '',
+): Array<{ field: string; message: string }> {
+  const fieldPath = parentPath
+    ? `${parentPath}.${error.property}`
+    : error.property;
+  const ownErrors = Object.values(error.constraints ?? {}).map((message) => ({
+    field: `body.${fieldPath}`,
+    message,
+  }));
+  const childErrors = (error.children ?? []).flatMap((child) =>
+    flattenValidationErrors(child, fieldPath),
+  );
+
+  return [...ownErrors, ...childErrors];
+}

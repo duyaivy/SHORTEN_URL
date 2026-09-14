@@ -52,7 +52,7 @@ export class NodeMailerSender implements EmailSender {
                 .replaceAll("{{title}}", "Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu.")
                 .replace("{{content}}", "Nhấn vào nút bên dưới để đặt lại mật khẩu của bạn")
                 .replace("{{titleLink}}", "Đặt lại mật khẩu")
-                .replace("{{link}}", `${this.configService.get("CLIENT_URL", { infer: true }) || ""}/a/login?token=${forgot_password_token}`)
+                .replace("{{link}}", `${this.configService.get("CLIENT_URL", { infer: true }) || ""}/login?token=${forgot_password_token}`)
                 .replace("{{year}}", new Date().getFullYear().toString()),
         });
 

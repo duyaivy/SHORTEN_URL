@@ -16,7 +16,7 @@ export class GetMyUrlsUseCase {
   constructor(
     private readonly shortUrlRepository: ShortUrlRepository,
     private readonly configService: ConfigService<EnvironmentVariables, true>,
-  ) {}
+  ) { }
 
   async execute(
     query: { limit?: number; page?: number },
@@ -29,10 +29,7 @@ export class GetMyUrlsUseCase {
       this.shortUrlRepository.findByOwner(userId, { limit, page }),
       this.shortUrlRepository.countByOwner(userId),
     ]);
-
-    const clientShortLink =
-      this.configService.get('CLIENT_SHORT_LINK', { infer: true }) || '';
-
+    const serverAliasShortLink = this.configService.get('SERVER_ALIAS_URL', { infer: true }) || '';
     return {
       control: {
         total: Math.ceil(totalDocuments / limit),
@@ -43,7 +40,7 @@ export class GetMyUrlsUseCase {
         const { password, ...rest } = item;
         return {
           ...rest,
-          short_url: `${clientShortLink}/${item.alias}`,
+          short_url: `${serverAliasShortLink}/${item.alias}`,
         };
       }),
     };

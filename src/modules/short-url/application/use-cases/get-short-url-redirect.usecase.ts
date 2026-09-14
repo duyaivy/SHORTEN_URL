@@ -32,22 +32,23 @@ export class GetShortUrlRedirectUseCase {
     let urlData: CachedShortUrl | undefined;
 
     const cached = await this.redisService.get<CachedShortUrl>(cacheKey);
-
+    const clientUrl =
+      this.configService.get('CLIENT_SHORT_LINK', { infer: true }) || '';
     if (cached === null) {
-      throw new NotFoundException({
-        message: 'Không tìm thấy URL',
-        data: [{ field: 'params.alias', message: 'URL không tồn tại hoặc đã bị tắt' }],
-      });
+      return {
+        redirectUrl: `${clientUrl}/link-unavailable`,
+        hasPassword: true,
+      };
     }
 
     if (cached !== undefined) {
       if (cached.exp && new Date(cached.exp) <= new Date()) {
         await this.redisService.del(cacheKey);
         await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
-        throw new NotFoundException({
-          message: 'Không tìm thấy URL',
-          data: [{ field: 'params.alias', message: 'URL không tồn tại hoặc đã hết hạn' }],
-        });
+        return {
+          redirectUrl: `${clientUrl}/link-unavailable`,
+          hasPassword: true,
+        };
       }
       urlData = cached;
     } else {
@@ -55,10 +56,10 @@ export class GetShortUrlRedirectUseCase {
 
       if (!url || !url.is_active || (url.exp && new Date(url.exp) <= new Date())) {
         await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
-        throw new NotFoundException({
-          message: 'Không tìm thấy URL',
-          data: [{ field: 'params.alias', message: 'URL không tồn tại hoặc đã bị tắt' }],
-        });
+        return {
+          redirectUrl: `${clientUrl}/link-unavailable`,
+          hasPassword: true,
+        };
       }
 
       urlData = {
@@ -77,10 +78,8 @@ export class GetShortUrlRedirectUseCase {
     }
 
     if (urlData.password) {
-      const clientUrl =
-        this.configService.get('CLIENT_URL', { infer: true }) || '';
       return {
-        redirectUrl: `${clientUrl}/a/password/${alias}?alias=${alias}`,
+        redirectUrl: `${clientUrl}/password/${alias}?alias=${alias}`,
         hasPassword: true,
       };
     }
