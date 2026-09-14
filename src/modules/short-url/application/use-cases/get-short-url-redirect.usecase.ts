@@ -1,0 +1,94 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EnvironmentVariables } from '../../../../shared/config/env.validation';
+import {
+  CachedShortUrl,
+  makeUrlCacheKey,
+  URL_CACHE_TTL,
+  URL_NULL_CACHE_TTL,
+} from '../../../../shared/types/cached-short-url.type';
+import { RedisService } from '../../../../shared/services/redis/redis.service';
+import { ShortUrlRepository } from '../../domain/repositories/short-url.repository';
+import { AnalyticsProducer } from '../../infrastructure/queues/analytics.producer';
+
+export interface RedirectResult {
+  redirectUrl: string;
+  hasPassword: boolean;
+}
+
+@Injectable()
+export class GetShortUrlRedirectUseCase {
+  constructor(
+    private readonly shortUrlRepository: ShortUrlRepository,
+    private readonly redisService: RedisService,
+    private readonly analyticsProducer: AnalyticsProducer,
+    private readonly configService: ConfigService<EnvironmentVariables>,
+  ) { }
+
+  async execute(alias: string): Promise<RedirectResult> {
+    const aliasText = encodeURIComponent(alias);
+    const cacheKey = makeUrlCacheKey(aliasText);
+
+    let urlData: CachedShortUrl | undefined;
+
+    const cached = await this.redisService.get<CachedShortUrl>(cacheKey);
+    const clientUrl =
+      this.configService.get('CLIENT_SHORT_LINK', { infer: true }) || '';
+    if (cached === null) {
+      return {
+        redirectUrl: `${clientUrl}/link-unavailable`,
+        hasPassword: true,
+      };
+    }
+
+    if (cached !== undefined) {
+      if (cached.exp && new Date(cached.exp) <= new Date()) {
+        await this.redisService.del(cacheKey);
+        await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
+        return {
+          redirectUrl: `${clientUrl}/link-unavailable`,
+          hasPassword: true,
+        };
+      }
+      urlData = cached;
+    } else {
+      const url = await this.shortUrlRepository.findByAlias(aliasText);
+
+      if (!url || !url.is_active || (url.exp && new Date(url.exp) <= new Date())) {
+        await this.redisService.setNull(cacheKey, URL_NULL_CACHE_TTL);
+        return {
+          redirectUrl: `${clientUrl}/link-unavailable`,
+          hasPassword: true,
+        };
+      }
+
+      urlData = {
+        id: url.id,
+        alias: url.alias,
+        url: url.url,
+        password: url.password,
+        owner_id: url.owner_id,
+        is_active: url.is_active,
+        views: url.views,
+        seo_data: url.seo_data,
+        exp: url.exp ? url.exp.toISOString() : null,
+      };
+
+      await this.redisService.set(cacheKey, urlData, URL_CACHE_TTL);
+    }
+
+    if (urlData.password) {
+      return {
+        redirectUrl: `${clientUrl}/password/${alias}?alias=${alias}`,
+        hasPassword: true,
+      };
+    }
+
+    await this.analyticsProducer.pushClickEvent(aliasText);
+
+    return {
+      redirectUrl: urlData.url,
+      hasPassword: false,
+    };
+  }
+}
