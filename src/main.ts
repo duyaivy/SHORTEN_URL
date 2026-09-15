@@ -1,4 +1,4 @@
-import { HttpStatus, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
+import { HttpStatus, RequestMethod, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -19,6 +19,12 @@ async function bootstrap() {
   });
   const logger = app.get(Logger);
   app.useLogger(logger);
+  app.setGlobalPrefix('api', {
+  exclude: [
+    'health',
+    { path: 'view/:alias', method: RequestMethod.GET }
+  ],
+});
 
   app.useGlobalPipes(
     new ValidationPipe({

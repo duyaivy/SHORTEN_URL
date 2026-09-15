@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.history/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Test
+test/
+coverage/
+*.test.ts
+*.spec.ts
+
+# Docker files (không cần copy vào image)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Prisma generated (sẽ generate lại khi build)
+src/generated/
+
+# Docs
+README.md
+architecture.md
+database.md
+
+# CI/CD
+.github/
+
+# .env KHÔNG bị ignore để Dockerfile có thể COPY — nhưng giá trị sẽ bị
+# override bởi environment: trong docker-compose khi runtime

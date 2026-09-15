@@ -1,0 +1,148 @@
+version: "3.9"
+
+# ============================================================
+# docker-compose.local.yml — BE ONLY (test standalone)
+# 🔴 MongoDB + Redis: dùng từ CLOUD (lấy URL từ .env)
+# ============================================================
+#
+# Cách chạy (từ thư mục SHORTEN_URL):
+#   docker compose -f docker-compose.local.yml up --build
+#
+# BE Node 1: http://localhost:8081
+# BE Node 2: http://localhost:8082
+# ============================================================
+
+services:
+
+  # ──────────────────────────────────────────────────────────
+  # ⚙️ Backend Node 1 — build từ source, port 8081
+  # ──────────────────────────────────────────────────────────
+  backend_node1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: shortlink-backend:local
+    container_name: shortlink_be_node1
+    restart: unless-stopped
+    ports:
+      - "8081:8080"   # http://localhost:8081
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      HOST: "0.0.0.0"
+
+      CORS_ORIGIN: "http://localhost"
+      CORS_ORIGIN_PUBLIC: "http://192.168.1.13"
+      CLIENT_SHORT_LINK: "http://localhost/a"
+      SERVER_ALIAS_URL: "http://localhost/view"
+
+      COMMON_RATE_LIMIT_WINDOW_MS: ${COMMON_RATE_LIMIT_WINDOW_MS:-1000}
+      COMMON_RATE_LIMIT_MAX_REQUESTS: ${COMMON_RATE_LIMIT_MAX_REQUESTS:-100}
+
+      # 🍃 MongoDB Cloud
+      DATABASE_URL: ${DATABASE_URL}
+
+      # 🔴 Redis Cloud
+      REDIS_URL: ${REDIS_URL}
+
+      PRIVATE_ACCESS_TOKEN_KEY: ${PRIVATE_ACCESS_TOKEN_KEY}
+      PRIVATE_REFRESH_TOKEN_KEY: ${PRIVATE_REFRESH_TOKEN_KEY}
+      ALGORITHM_JWT: ${ALGORITHM_JWT:-HS256}
+      ACCESS_TOKEN_EXPIRATION_TIME: ${ACCESS_TOKEN_EXPIRATION_TIME:-1h}
+      REFRESH_TOKEN_EXPIRATION_TIME: ${REFRESH_TOKEN_EXPIRATION_TIME:-3d}
+      SECRET_OR_PUBLIC_JWT_KEY: ${SECRET_OR_PUBLIC_JWT_KEY}
+      PRIVATE_PASSWORD: ${PRIVATE_PASSWORD}
+      PASSWORD_SECRET: ${PASSWORD_SECRET}
+
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      CLIENT_URL: "http://localhost"
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: "http://localhost/a"
+
+      SECRECT_KEY_RECAPCHA: ${SECRECT_KEY_RECAPCHA}
+
+    networks:
+      - shortlink_be_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────────
+  # ⚙️ Backend Node 2 — reuse image, port 8082
+  # ──────────────────────────────────────────────────────────
+  backend_node2:
+    image: shortlink-backend:local
+    container_name: shortlink_be_node2
+    restart: unless-stopped
+    ports:
+      - "8082:8080"   # http://localhost:8082
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      HOST: "0.0.0.0"
+
+      CORS_ORIGIN: "http://localhost"
+      CORS_ORIGIN_PUBLIC: "http://192.168.1.13"
+      CLIENT_SHORT_LINK: "http://localhost/a"
+      SERVER_ALIAS_URL: "http://localhost/view"
+
+      COMMON_RATE_LIMIT_WINDOW_MS: ${COMMON_RATE_LIMIT_WINDOW_MS:-1000}
+      COMMON_RATE_LIMIT_MAX_REQUESTS: ${COMMON_RATE_LIMIT_MAX_REQUESTS:-100}
+
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+
+      PRIVATE_ACCESS_TOKEN_KEY: ${PRIVATE_ACCESS_TOKEN_KEY}
+      PRIVATE_REFRESH_TOKEN_KEY: ${PRIVATE_REFRESH_TOKEN_KEY}
+      ALGORITHM_JWT: ${ALGORITHM_JWT:-HS256}
+      ACCESS_TOKEN_EXPIRATION_TIME: ${ACCESS_TOKEN_EXPIRATION_TIME:-1h}
+      REFRESH_TOKEN_EXPIRATION_TIME: ${REFRESH_TOKEN_EXPIRATION_TIME:-3d}
+      SECRET_OR_PUBLIC_JWT_KEY: ${SECRET_OR_PUBLIC_JWT_KEY}
+      PRIVATE_PASSWORD: ${PRIVATE_PASSWORD}
+      PASSWORD_SECRET: ${PASSWORD_SECRET}
+
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      CLIENT_URL: "http://localhost"
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: "http://localhost/a"
+
+      SECRECT_KEY_RECAPCHA: ${SECRECT_KEY_RECAPCHA}
+
+    depends_on:
+      backend_node1:
+        condition: service_started
+    networks:
+      - shortlink_be_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  shortlink_be_network:
+    driver: bridge

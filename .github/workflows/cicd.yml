@@ -1,0 +1,240 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Force rebuild even if no changes"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/shortlink-backend
+
+jobs:
+  build-and-push:
+    name: Build & Push Backend Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-vps1:
+    name: Deploy Backend Node 1 to VPS 1
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - name: SSH into VPS 1 and update Backend Node 1
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS1_HOST }}
+          username: ${{ secrets.VPS1_USER }}
+          key: ${{ secrets.VPS1_SSH_KEY }}
+          port: ${{ secrets.VPS1_SSH_PORT || 22 }}
+          script: |
+            set -euo pipefail
+
+            echo "[VPS1] Deploying Backend Node 1 — $(date '+%Y-%m-%d %H:%M:%S')"
+
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u "${{ github.actor }}" --password-stdin
+
+            IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}"
+            echo "Pulling $IMAGE"
+            docker pull "$IMAGE"
+
+            cd ${{ secrets.VPS1_DEPLOY_DIR }}
+
+            cat > .env << 'ENVEOF'
+            GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+            FE_IMAGE_TAG=latest
+            BE_IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            CORS_ORIGIN_PUBLIC=${{ secrets.CORS_ORIGIN_PUBLIC }}
+            CLIENT_SHORT_LINK=${{ secrets.CLIENT_SHORT_LINK }}
+            SERVER_ALIAS_URL=${{ secrets.SERVER_ALIAS_URL }}
+            COMMON_RATE_LIMIT_WINDOW_MS=${{ secrets.COMMON_RATE_LIMIT_WINDOW_MS }}
+            COMMON_RATE_LIMIT_MAX_REQUESTS=${{ secrets.COMMON_RATE_LIMIT_MAX_REQUESTS }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            PRIVATE_ACCESS_TOKEN_KEY=${{ secrets.PRIVATE_ACCESS_TOKEN_KEY }}
+            PRIVATE_REFRESH_TOKEN_KEY=${{ secrets.PRIVATE_REFRESH_TOKEN_KEY }}
+            ALGORITHM_JWT=${{ secrets.ALGORITHM_JWT }}
+            ACCESS_TOKEN_EXPIRATION_TIME=${{ secrets.ACCESS_TOKEN_EXPIRATION_TIME }}
+            REFRESH_TOKEN_EXPIRATION_TIME=${{ secrets.REFRESH_TOKEN_EXPIRATION_TIME }}
+            SECRET_OR_PUBLIC_JWT_KEY=${{ secrets.SECRET_OR_PUBLIC_JWT_KEY }}
+            PRIVATE_PASSWORD=${{ secrets.PRIVATE_PASSWORD }}
+            PASSWORD_SECRET=${{ secrets.PASSWORD_SECRET }}
+            EMAIL_HOST=${{ secrets.EMAIL_HOST }}
+            EMAIL_PORT=${{ secrets.EMAIL_PORT }}
+            CLIENT_URL=${{ secrets.CLIENT_URL }}
+            EMAIL_USER=${{ secrets.EMAIL_USER }}
+            EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+            SECRECT_KEY_RECAPCHA=${{ secrets.SECRECT_KEY_RECAPCHA }}
+            ENVEOF
+
+            echo "Restarting Backend Node 1 (Frontend stays up)..."
+            docker compose -f docker-compose.vps1.yml up -d --no-deps --pull always backend
+
+            echo "Waiting for health check..."
+            RETRIES=0
+            MAX_RETRIES=12
+            until docker inspect --format='{{.State.Health.Status}}' shortlink_backend_node1 | grep -q "healthy"; do
+              RETRIES=$((RETRIES + 1))
+              if [ $RETRIES -ge $MAX_RETRIES ]; then
+                echo "Health check failed after $MAX_RETRIES attempts"
+                docker logs shortlink_backend_node1 --tail 50
+                exit 1
+              fi
+              echo "  attempt $RETRIES/$MAX_RETRIES — retrying in 10s..."
+              sleep 10
+            done
+
+            docker image prune -f --filter "until=24h"
+            echo "Backend Node 1 deployed — tag: ${{ needs.build-and-push.outputs.image_tag }}"
+
+  deploy-vps2:
+    name: Deploy Backend Node 2 to VPS 2
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - name: SSH into VPS 2 and update Backend Node 2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS2_HOST }}
+          username: ${{ secrets.VPS2_USER }}
+          key: ${{ secrets.VPS2_SSH_KEY }}
+          port: ${{ secrets.VPS2_SSH_PORT || 22 }}
+          script: |
+            set -euo pipefail
+
+            echo "[VPS2] Deploying Backend Node 2 — $(date '+%Y-%m-%d %H:%M:%S')"
+
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u "${{ github.actor }}" --password-stdin
+
+            IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}"
+            echo "Pulling $IMAGE"
+            docker pull "$IMAGE"
+
+            cd ${{ secrets.VPS2_DEPLOY_DIR }}
+
+            cat > .env << 'ENVEOF'
+            GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+            FE_IMAGE_TAG=latest
+            BE_IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            CORS_ORIGIN_PUBLIC=${{ secrets.CORS_ORIGIN_PUBLIC }}
+            CLIENT_SHORT_LINK=${{ secrets.CLIENT_SHORT_LINK }}
+            SERVER_ALIAS_URL=${{ secrets.SERVER_ALIAS_URL }}
+            COMMON_RATE_LIMIT_WINDOW_MS=${{ secrets.COMMON_RATE_LIMIT_WINDOW_MS }}
+            COMMON_RATE_LIMIT_MAX_REQUESTS=${{ secrets.COMMON_RATE_LIMIT_MAX_REQUESTS }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            PRIVATE_ACCESS_TOKEN_KEY=${{ secrets.PRIVATE_ACCESS_TOKEN_KEY }}
+            PRIVATE_REFRESH_TOKEN_KEY=${{ secrets.PRIVATE_REFRESH_TOKEN_KEY }}
+            ALGORITHM_JWT=${{ secrets.ALGORITHM_JWT }}
+            ACCESS_TOKEN_EXPIRATION_TIME=${{ secrets.ACCESS_TOKEN_EXPIRATION_TIME }}
+            REFRESH_TOKEN_EXPIRATION_TIME=${{ secrets.REFRESH_TOKEN_EXPIRATION_TIME }}
+            SECRET_OR_PUBLIC_JWT_KEY=${{ secrets.SECRET_OR_PUBLIC_JWT_KEY }}
+            PRIVATE_PASSWORD=${{ secrets.PRIVATE_PASSWORD }}
+            PASSWORD_SECRET=${{ secrets.PASSWORD_SECRET }}
+            EMAIL_HOST=${{ secrets.EMAIL_HOST }}
+            EMAIL_PORT=${{ secrets.EMAIL_PORT }}
+            CLIENT_URL=${{ secrets.CLIENT_URL }}
+            EMAIL_USER=${{ secrets.EMAIL_USER }}
+            EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+            SECRECT_KEY_RECAPCHA=${{ secrets.SECRECT_KEY_RECAPCHA }}
+            ENVEOF
+
+            echo "Restarting Backend Node 2..."
+            docker compose -f docker-compose.vps2.yml up -d --pull always backend
+
+            echo "Waiting for health check..."
+            RETRIES=0
+            MAX_RETRIES=12
+            until docker inspect --format='{{.State.Health.Status}}' shortlink_backend_node2 | grep -q "healthy"; do
+              RETRIES=$((RETRIES + 1))
+              if [ $RETRIES -ge $MAX_RETRIES ]; then
+                echo "Health check failed after $MAX_RETRIES attempts"
+                docker logs shortlink_backend_node2 --tail 50
+                exit 1
+              fi
+              echo "  attempt $RETRIES/$MAX_RETRIES — retrying in 10s..."
+              sleep 10
+            done
+
+            docker image prune -f --filter "until=24h"
+            echo "Backend Node 2 deployed — tag: ${{ needs.build-and-push.outputs.image_tag }}"
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-vps1, deploy-vps2]
+    if: always()
+
+    steps:
+      - name: Deployment succeeded
+        if: needs.deploy-vps1.result == 'success' && needs.deploy-vps2.result == 'success'
+        run: |
+          echo "Backend deployed to VPS1 + VPS2 — tag: ${{ needs.build-and-push.outputs.image_tag }}"
+
+      - name: Deployment failed
+        if: needs.deploy-vps1.result == 'failure' || needs.deploy-vps2.result == 'failure'
+        run: |
+          echo "Backend deployment failed"
+          echo "  VPS1: ${{ needs.deploy-vps1.result }}"
+          echo "  VPS2: ${{ needs.deploy-vps2.result }}"
+          exit 1

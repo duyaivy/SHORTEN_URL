@@ -9,6 +9,7 @@ import { PrismaModule } from './shared/services/prisma/prisma.module';
 import { RedisModule } from './shared/services/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ShortUrlModule } from './modules/short-url/short-url.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -70,7 +71,7 @@ import { ShortUrlModule } from './modules/short-url/short-url.module';
     AuthModule,
     ShortUrlModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
