@@ -13,7 +13,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ServiceResponse } from '../../../../shared/responses/service-response';
@@ -166,6 +166,9 @@ export class ShortUrlController {
   //  - Không có password → HTTP 302 redirect thẳng về URL gốc (views +1 qua Redis INCR)
   //  - Có password       → HTTP 302 redirect về {CLIENT_URL}/password/{alias}?alias={alias}
   @Get('view/:alias')
+  // Public redirects are the read-heavy data path. API throttles still apply to
+  // link creation, authentication, password verification, and management APIs.
+  @SkipThrottle({ global: true, create: true })
   @ApiOperation({
     summary: 'Access and redirect short URL',
     description:

@@ -124,17 +124,38 @@ pnpm start:prod
 
 ## 🧩 API Overview
 
+> **Base Path:** All API routes are prefixed with `/api` (except `/health` and redirect `GET /view/:alias`). Swagger documentation is available at `/docs`.
+
+### 🔑 Authentication (`/api/auth`)
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/:alias` | **Direct 302 Redirect** to long URL or Password challenge page |
-| `POST` | `/api/v1/short-url` | Create new short URL |
-| `GET` | `/api/v1/short-url/my-urls` | List authenticated user's short links |
-| `PATCH` | `/api/v1/short-url/:alias` | Update existing short link config |
-| `DELETE` | `/api/v1/short-url/:alias` | Delete short link |
-| `POST` | `/api/v1/auth/register` | User registration |
-| `POST` | `/api/v1/auth/login` | User login |
-| `POST` | `/api/v1/auth/refresh` | Refresh JWT access token |
-| `GET` | `/api/v1/user/me` | Fetch active user profile |
+| `POST` | `/api/auth/register` | User registration |
+| `POST` | `/api/auth/login` | User login (returns JWT tokens via HTTP-only cookies) |
+| `GET` | `/api/auth/oauth` | Google OAuth2 authentication |
+| `GET` | `/api/auth/me` | Fetch active user profile |
+| `POST` | `/api/auth/refresh-token` | Refresh JWT access token |
+| `GET` | `/api/auth/forgot-password` | Send password reset email |
+| `POST` | `/api/auth/reset-password` | Reset password using token |
+
+### 🔗 Short URLs (`/api`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/:alias` *(Proxy ➔ `/view/:alias`)* | **Direct HTTP 302 Redirect** to target URL or password page |
+| `POST` | `/api` | Create new short URL (supports anonymous & authenticated) |
+| `POST` | `/api/view/:alias` | Get password-protected short URL details |
+| `GET` | `/api/my-urls` | List authenticated user's short links (paginated) |
+| `PATCH` | `/api/my-urls/active` | Batch update active/inactive status of links |
+| `DELETE` | `/api/my-urls` | Batch delete short links by ID list |
+| `PATCH` | `/api/:alias` | Update existing short link configuration |
+
+### 📱 QR History & Utilities (`/api`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/qr-history` | Create QR scan history record |
+| `GET` | `/api/qr-history` | List QR scan history (paginated) |
+| `DELETE` | `/api/qr-history` | Batch delete QR scan history records |
+| `POST` | `/api/view/recaptcha` | Verify reCAPTCHA token |
+| `GET` | `/health` | Health check endpoint |
 
 ---
 

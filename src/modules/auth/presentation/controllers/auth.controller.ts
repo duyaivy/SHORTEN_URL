@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RegisterDTO } from "../dtos/register.dto";
 import { LoginDTO } from "../dtos/login.dto";
@@ -19,6 +19,7 @@ import { ForgotPasswordDTO } from "../dtos/forgot-password.dto";
 import { ForgotPasswordUseCase } from "../../application/use-cases/forgot-password.usecase";
 import { ResetPasswordUseCase } from "../../application/use-cases/reset-password.usecase";
 import { ResetPasswordDTO } from "../dtos/reset-password.dto";
+import { LogoutUseCase } from "../../application/use-cases/logout.usecase";
 
 @ApiTags('Auth')
 @Controller("auth")
@@ -29,6 +30,7 @@ export class AuthController {
     private readonly loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private readonly getMeUseCase: GetMeUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
+    private readonly logoutUseCase: LogoutUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly configService: ConfigService<EnvironmentVariables, true>
@@ -138,6 +140,33 @@ export class AuthController {
     });
 
     return ServiceResponse.success("Token refreshed successfully", data, HttpStatus.OK);
+  }
+
+  @Delete('logout')
+  @ApiCookieAuth('refresh-token-cookie')
+  @ApiOperation({ summary: 'Logout and revoke the current refresh token' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Logout successful' })
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (refreshToken) {
+      await this.logoutUseCase.execute({ refreshToken });
+    }
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict' as const,
+      path: '/',
+    };
+
+    res.clearCookie('access_token', cookieOptions);
+    res.clearCookie('refresh_token', cookieOptions);
+
+    return ServiceResponse.success('Logout successful', null, HttpStatus.OK);
   }
 
   @Throttle({
