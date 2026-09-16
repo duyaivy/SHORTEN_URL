@@ -1,91 +1,98 @@
-# 🔗 ShortLink – URL Shortening & QR Management Platform
+# 🔗 ShortLink – URL Shortening & QR Management Platform (Backend)
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
-![NodeJS](https://img.shields.io/badge/Node.js-18%2B-green.svg)
-![Express](https://img.shields.io/badge/ExpressJS-4.x-lightgrey.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)
+![NodeJS](https://img.shields.io/badge/Node.js-20%2B-green.svg)
+![NestJS](https://img.shields.io/badge/NestJS-12.x-red.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)
+![Prisma](https://img.shields.io/badge/Prisma-6.x-2D3748.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4%2B-brightgreen.svg)
+![Redis](https://img.shields.io/badge/Redis-ioredis-DC382D.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-> **A modern, scalable, and secure backend service for URL shortening, QR generation, and link analytics.**
+> **A high-performance, scalable, and secure NestJS backend service for URL shortening, direct 302 redirects, batch analytics, and QR management following Clean Architecture.**
 
 ---
 
 ## 🌟 Introduction
 
-**ShortLink** is a backend API platform that powers the ShortLink web application.  
-It provides core functionalities such as URL shortening, QR code generation, authentication, and analytics.  
-Built with **Node.js**, **Express**, and **TypeScript**, it follows a clean modular architecture ensuring scalability, maintainability, and developer productivity.
+**ShortLink Backend** is a modern RESTful API platform built with **NestJS 12**, **TypeScript**, **Prisma ORM**, and **Redis**.  
+It implements high-performance architectural patterns outlined in [architecture.md](file:///Users/apple/QUOCDUY/PROJECT/SHORTLINK/SHORTEN_URL/architecture.md), including **Base62 Key Generation (KGS)**, **Direct HTTP 302 Redirects**, **In-Memory Redis Caching with Null-Cache protection**, and **Async Batch Analytics Flushing**.
 
 ---
 
 ## 🧠 Tech Stack
 
-### **Backend**
-
+### **Core Backend & Framework**
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white)
 ![NodeJS](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
-![ExpressJS](https://img.shields.io/badge/ExpressJS-000000?style=flat-square&logo=express&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)
+
+### **Security & Validation**
 ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
-![AWS S3](https://img.shields.io/badge/AWS%20S3-FF9900?style=flat-square&logo=amazonaws&logoColor=white)
-![QRCode](https://img.shields.io/badge/QR--Code-000000?style=flat-square)
-![Nodemailer](https://img.shields.io/badge/Nodemailer-0078D4?style=flat-square&logo=gmail&logoColor=white)
-![Zod](https://img.shields.io/badge/Zod-5E81AC?style=flat-square)
-![Agenda](https://img.shields.io/badge/Agenda-Scheduler-blue?style=flat-square)
+![Argon2](https://img.shields.io/badge/Argon2-00599C?style=flat-square)
+![Zod](https://img.shields.io/badge/Zod-3E67B1?style=flat-square&logo=zod&logoColor=white)
+![Pino](https://img.shields.io/badge/Pino-Logger-000000?style=flat-square)
 
-### **DevOps & Tools**
-
+### **DevOps & Testing**
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Postman](https://img.shields.io/badge/Postman-FF6C37?style=flat-square&logo=postman&logoColor=white)
-![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=flat-square&logo=eslint&logoColor=white)
-![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black)
-![Husky](https://img.shields.io/badge/Husky-git%20hooks-red?style=flat-square)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)
+![PNPM](https://img.shields.io/badge/PNPM-F69220?style=flat-square&logo=pnpm&logoColor=white)
 
 ---
 
-## ⚙️ Features
+## ⚙️ Features & Architecture Compliance
 
-| Category                         | Description                                                                        |
-| -------------------------------- | ---------------------------------------------------------------------------------- |
-| 🔐 **Authentication**            | Secure login, registration, and token refresh using **JWT**.                       |
-| 🔗 **URL Shortening (CRUD)**     | Create, update, retrieve, and delete short URLs with optional password protection. |
-| 📷 **QR Code Generation**        | Generate downloadable QR codes for shortened URLs using built-in QR utilities.     |
-| 🧾 **QR History Management**     | Track user QR scans and store them with pagination.                                |
-| 📊 **Link Analytics**            | Count and visualize number of visits per alias.                                    |
-| 🧠 **Rate Limiting**             | Prevent abuse with request throttling.                                             |
-| 🧰 **Validation Layer**          | Schema validation via Zod and Joi equivalents.                                     |
-| ☁️ **File & Image Storage**      | AWS S3 integration for uploaded assets.                                            |
-| 📬 **Email Service**             | Nodemailer for password recovery and notifications.                                |
-| 🧱 **ServiceResponse Model**     | Standard response structure across APIs.                                           |
-| 🛡️ **Error Handling Middleware** | Centralized error management & logging.                                            |
-| 🧩 **Modular Architecture**      | Each API (auth, user, url) is self-contained for clarity and scalability.          |
+| Feature / Category | Technical Implementation |
+| :--- | :--- |
+| 🚀 **High Speed 302 Redirect** | Direct HTTP 302 redirection for zero-latency link resolution. Crawlers follow 302 directly to target. |
+| ⚡ **Base62 & Key Generation (KGS)** | Generates unique 7-character short codes using Base62 algorithm for $O(1)$ database lookup. |
+| 💾 **In-Memory Caching (Redis)** | Caches `alias` → `long_url` and metadata with LRU eviction and 60s Null Value Caching against DB cache penetration. |
+| 📊 **Batch Analytics Queue** | Non-blocking Redis `INCR views:{alias}` per hit; `AnalyticsFlushScheduler` flushes counts to DB every 30s. |
+| 🔐 **Authentication & Security** | JWT access/refresh tokens, Argon2 password hashing, and NestJS Throttler for Rate Limiting. |
+| 📷 **QR Scan History** | Stores user QR generation and scan history with pagination. |
+| 🛡️ **Clean Architecture** | Divided into Domain, Application, Infrastructure, and Presentation layers for maintainability. |
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-📦 shortlink-backend/
+📦 SHORTEN_URL/
+├── prisma/
+│   └── schema.prisma            # Prisma Schema (Users, ShortUrls, RefreshTokens, QrHistories)
 ├── src/
-│   ├── api/
-│   │   ├── auth/                # Authentication (JWT, login/register)
-│   │   ├── url/                 # URL Shortening & QR
-│   │   └── user/                # User management
-│   ├── common/
-│   │   ├── constant/            # Enums, messages, config
-│   │   ├── middleware/          # Logger, rateLimiter, errorHandler
-│   │   ├── models/              # Mongoose models & response objects
-│   │   ├── services/            # Database & utility services
-│   │   └── utils/               # Helper modules (JWT, email, QR, random, etc.)
-│   ├── server.ts                # Express app setup
-│   ├── index.ts                 # Entry point
-│   └── type.d.ts                # Type declarations
-├── Dockerfile
-├── package.json
-├── tsconfig.json
-├── .env.example
-└── README.md
+│   ├── modules/                 # Clean Architecture Domain Modules
+│   │   ├── auth/                # Authentication & Session Management
+│   │   │   ├── application/     # Auth Use Cases, DTOs & Services
+│   │   │   ├── domain/          # User & Token Entities / Interfaces
+│   │   │   ├── infrastructure/  # Token Verification, Password Hashing & Repositories
+│   │   │   └── presentation/    # Auth Controller & REST Endpoints
+│   │   └── short-url/           # URL Shortening, Redirection & Analytics
+│   │       ├── application/     # Shortening Use Cases, AnalyticsFlushScheduler
+│   │       ├── domain/          # Base62 Generator & URL Entity Rules
+│   │       ├── infrastructure/  # Redis Cache Layer & Prisma Repositories
+│   │       └── presentation/    # Direct 302 Redirect & CRUD Controllers
+│   ├── shared/                  # Cross-cutting Modules & Infrastructure
+│   │   ├── config/              # Environment & App Configuration
+│   │   ├── filters/             # Global HTTP Exception Filters
+│   │   ├── responses/           # Standard Service Response Envelope
+│   │   ├── services/            # Shared PrismaService & RedisService
+│   │   ├── types/               # Type Definitions
+│   │   └── utils/               # Common Helper Utilities
+│   ├── app.controller.ts        # Root Health Check Controller
+│   ├── app.module.ts            # Root Application Module
+│   └── main.ts                  # Application Entrypoint, Validation Pipe & Swagger Setup
+├── test/                        # Vitest Integration & E2E Test Suites
+├── architecture.md              # System Architecture & Implementation Blueprint
+├── docker-compose.local.yml     # Local Development Stack (MongoDB, Redis, App)
+├── docker-compose.vps2.yml      # Production Deployment Stack
+├── Dockerfile                   # Production Container Spec
+└── package.json
 ```
 
 ---
@@ -96,65 +103,74 @@ Built with **Node.js**, **Express**, and **TypeScript**, it follows a clean modu
 # 1. Install dependencies
 pnpm install
 
-# 2. Set up environment variables
+# 2. Setup environment variables
 cp .env.example .env
 
-# 3. Run development server
-pnpm dev
+# 3. Generate Prisma client & sync database
+npx prisma generate
+npx prisma db push
 
-# 4. Build production bundle
+# 4. Start NestJS dev server (with hot reload)
+pnpm start:dev
+
+# 5. Build for production
 pnpm build
 
-# 5. Start production server
-pnpm start
+# 6. Start production server
+pnpm start:prod
 ```
 
 ---
 
 ## 🧩 API Overview
 
-| Method   | Endpoint                | Description                       |
-| -------- | ----------------------- | --------------------------------- |
-| `POST`   | `/auth/register`        | Register new user                 |
-| `POST`   | `/auth/login`           | User login                        |
-| `POST`   | `/auth/refresh-token`   | Refresh JWT token                 |
-| `GET`    | `/auth/forgot-password` | Send email forgot password        |
-| `POST`   | `/auth/reset-password`  | Reset password                    |
-| `POST`   | `/auth/logout`          | Logout to the application         |
-| `GET`    | `/user/get-me`          | Get user information              |
-| `POST`   | `/`                     | Create short URL                  |
-| `GET`    | `/my-urls`              | Get list user’s URLs              |
-| `PATCH`  | `/:alias`               | Update URL                        |
-| `DELETE` | `/my-urls`              | Delete URL                        |
-| `POST`   | `/qr-history`           | Save QR scan history              |
-| `GET`    | `/:alias`               | Resolve short link to destination |
-| `...`    | `....`                  | And more...                       |
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/:alias` | **Direct 302 Redirect** to long URL or Password challenge page |
+| `POST` | `/api/v1/short-url` | Create new short URL |
+| `GET` | `/api/v1/short-url/my-urls` | List authenticated user's short links |
+| `PATCH` | `/api/v1/short-url/:alias` | Update existing short link config |
+| `DELETE` | `/api/v1/short-url/:alias` | Delete short link |
+| `POST` | `/api/v1/auth/register` | User registration |
+| `POST` | `/api/v1/auth/login` | User login |
+| `POST` | `/api/v1/auth/refresh` | Refresh JWT access token |
+| `GET` | `/api/v1/user/me` | Fetch active user profile |
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture Blueprint Compliance
 
-**ShortLink Backend** follows a **Layered Architecture** for better scalability:
+Refer to [`architecture.md`](file:///Users/apple/QUOCDUY/PROJECT/SHORTLINK/SHORTEN_URL/architecture.md) for full architectural guidelines:
 
-- **Controller Layer** → Handles HTTP requests and responses.
-- **Service Layer** → Core business logic and database operations.
-- **Model Layer** → Mongoose schemas and document modeling.
-- **Middleware Layer** → Security, validation, and logging.
-- **Utility Layer** → Shared helpers (QR, JWT, Email, etc).
+1. **ID Generation (Base62 + KGS)**:
+   - Uses **Base62** (`a-z`, `A-Z`, `0-9`) encoding for 7-character short links (~3.5 trillion unique keys).
+2. **Read-Heavy Caching Strategy**:
+   - Redis caches `alias` → `long_url` mapping.
+   - **LRU Eviction** for memory optimization + **60s Null Caching** to prevent Cache Penetration.
+3. **Async Batch Tracking**:
+   - High-throughput Redis `INCR views:{alias}` counters.
+   - `AnalyticsFlushScheduler` runs asynchronously every 30s to commit accumulated click counts to DB in batch transactions.
+4. **Security & Rate Limiting**:
+   - NestJS Throttler Guard powered by Redis to enforce token bucket rate limits per client IP.
 
 ---
 
 ## 🧪 Testing
 
-The project supports **integration tests** with Vitest.
+The project uses **Vitest** for fast unit and integration testing.
 
 ```bash
-# Run all tests
+# Run unit & integration tests
 pnpm test
 
-# Run a specific test
-pnpm test src/api/user/__tests__/user.integration.test.ts
+# Run tests in watch mode
+pnpm test:watch
+
+# Run E2E tests
+pnpm test:e2e
 ```
+
+---
 
 ## 💎 Author & Contact
 
