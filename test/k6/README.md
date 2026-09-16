@@ -27,6 +27,22 @@ GET /{alias}
 Every request uses `redirects: 0`. k6 records the ShortLink service's HTTP 302
 without contacting or measuring the external destination site.
 
+## Short built-in profiles
+
+Set `TEST_PROFILE` to choose a complete load shape without passing every VU and
+duration variable:
+
+| Profile  | Redirect and mixed tests    | Negative test               | Intended use                           |
+| -------- | --------------------------- | --------------------------- | -------------------------------------- |
+| `smoke`  | 55 seconds, peak 10 VUs     | 45 seconds, peak 5 VUs      | Verify a deployment before load        |
+| `load`   | 4m30s, peak/sustain 100 VUs | 3m15s, peak/sustain 50 VUs  | Default meaningful stability check     |
+| `stress` | 4m30s, peak/sustain 300 VUs | 3m15s, peak/sustain 150 VUs | Find degradation in authorized staging |
+
+The default is `load`. With the default one-second request interval, sustained
+RPS is approximately bounded by the active VU count. Set
+`REQUEST_INTERVAL_SECONDS=0` only for an authorized maximum-throughput test;
+even a small VU count can then generate very high RPS.
+
 ## What the repository does on a redirect
 
 - The public Nginx route accepts 4-20 alphanumeric characters at `/{alias}` and
@@ -76,8 +92,13 @@ Run with a local k6 installation:
 k6 run \
   -e BASE_URL=https://url.duyaivy.id.vn \
   -e TEST_ALIAS=abc123 \
+  -e TEST_PROFILE=load \
   test/k6/redirect-load.js
 ```
+
+Run a sub-minute deployment check with `-e TEST_PROFILE=smoke`. Use
+`-e TEST_PROFILE=stress` only against an environment that is allowed to receive
+approximately 300 concurrent VUs.
 
 Optionally assert the exact destination as an additional safety check:
 
@@ -119,6 +140,7 @@ k6 run \
   -e HOT_ALIASES=hot001,hot002,hot003 \
   -e COLD_ALIASES=cold001,cold002,cold003,cold004,cold005 \
   -e HOT_TRAFFIC_PERCENT=80 \
+  -e TEST_PROFILE=load \
   test/k6/redirect-mixed-load.js
 ```
 
@@ -156,6 +178,7 @@ k6 run \
   -e MISSING_ALIASES=miss0001,miss0002,miss0003 \
   -e INACTIVE_ALIASES=off0001,off0002 \
   -e EXPIRED_ALIASES=old0001,old0002 \
+  -e TEST_PROFILE=load \
   test/k6/redirect-negative-load.js
 ```
 
@@ -176,9 +199,11 @@ Important negative-test variables:
 | `P99_THRESHOLD_MS`      |  `1500` | Unavailable-redirect p99 threshold          |
 | `MAX_RATE_LIMITED_RATE` | `0.001` | Maximum accepted upstream 429 rate          |
 
-All three scripts share the same stage variables such as `WARMUP_VUS`,
-`LOW_VUS`, `HIGH_VUS`, `SUSTAIN_VUS`, their duration counterparts, and
-`REQUEST_INTERVAL_SECONDS`. The mixed script additionally has a moderate stage.
+All three scripts share `TEST_PROFILE`, `REQUEST_INTERVAL_SECONDS`, and the
+stage override variables such as `WARMUP_VUS`, `LOW_VUS`, `HIGH_VUS`,
+`SUSTAIN_VUS`, and their duration counterparts. An explicitly supplied stage
+variable overrides that value from the selected profile. The redirect and mixed
+scripts additionally have a moderate stage.
 
 ## Configuration and default single-alias load profile
 
@@ -187,30 +212,37 @@ All three scripts share the same stage variables such as `WARMUP_VUS`,
 | `BASE_URL`                           | `https://url.duyaivy.id.vn` | Public Nginx origin, without the alias                    |
 | `TEST_ALIAS`                         |                    `abc123` | Existing 4-20 character alphanumeric alias                |
 | `EXPECTED_LOCATION`                  |                       empty | Optional exact expected `Location` value                  |
+| `TEST_PROFILE`                       |                      `load` | `smoke`, `load`, or `stress`                              |
 | `REQUEST_INTERVAL_SECONDS`           |                         `1` | Pause per VU after each request; `0` removes pacing       |
-| `WARMUP_VUS` / `WARMUP_DURATION`     |                 `5` / `30s` | Conservative cache/application warm-up                    |
-| `LOW_VUS` / `LOW_DURATION`           |                 `20` / `1m` | Low-load ramp                                             |
-| `MODERATE_VUS` / `MODERATE_DURATION` |                 `50` / `1m` | Moderate-load ramp                                        |
-| `HIGH_VUS` / `HIGH_DURATION`         |                `100` / `1m` | Higher-load ramp                                          |
-| `SUSTAIN_VUS` / `SUSTAIN_DURATION`   |                `100` / `2m` | Sustained-load observation                                |
-| `RAMP_DOWN_DURATION`                 |                       `30s` | Graceful ramp to zero                                     |
+| `WARMUP_VUS` / `WARMUP_DURATION`     |               profile-based | Optional warm-up override                                 |
+| `LOW_VUS` / `LOW_DURATION`           |               profile-based | Optional low-stage override                               |
+| `MODERATE_VUS` / `MODERATE_DURATION` |               profile-based | Optional moderate-stage override                          |
+| `HIGH_VUS` / `HIGH_DURATION`         |               profile-based | Optional high-stage override                              |
+| `SUSTAIN_VUS` / `SUSTAIN_DURATION`   |               profile-based | Optional sustained-stage override                         |
+| `RAMP_DOWN_DURATION`                 |               profile-based | Optional graceful ramp-down override                      |
 | `P95_THRESHOLD_MS`                   |                       `500` | Initial p95 latency baseline                              |
 | `P99_THRESHOLD_MS`                   |                      `1000` | Initial p99 latency baseline                              |
 | `MAX_SERVER_ERROR_RATE`              |                      `0.01` | Maximum baseline rate for network/5xx/unexpected failures |
 | `MAX_RATE_LIMITED_RATE`              |                     `0.001` | Maximum accepted upstream 429 rate                        |
 
-The full default single-alias run lasts six minutes. Start smaller against
-production, for example:
+The default `load` single-alias run lasts 4m30s. Start with the 55-second smoke
+profile after a deployment:
 
 ```bash
 k6 run \
   -e BASE_URL=https://url.duyaivy.id.vn \
   -e TEST_ALIAS=abc123 \
-  -e WARMUP_VUS=1 \
-  -e LOW_VUS=2 \
-  -e MODERATE_VUS=5 \
-  -e HIGH_VUS=10 \
-  -e SUSTAIN_VUS=10 \
+  -e TEST_PROFILE=smoke \
+  test/k6/redirect-load.js
+```
+
+For a short, stronger staging run, switch only the profile:
+
+```bash
+k6 run \
+  -e BASE_URL=https://staging-url.example.com \
+  -e TEST_ALIAS=abc123 \
+  -e TEST_PROFILE=stress \
   test/k6/redirect-load.js
 ```
 

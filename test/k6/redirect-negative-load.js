@@ -19,6 +19,8 @@ const REQUEST_INTERVAL_SECONDS = numberFromEnv(
   1,
   0,
 );
+const TEST_PROFILE = (__ENV.TEST_PROFILE || "load").toLowerCase();
+const LOAD_PROFILE = negativeProfile(TEST_PROFILE);
 
 const unavailableRedirectSuccessRate = new Rate(
   "unavailable_redirect_success_rate",
@@ -49,25 +51,29 @@ http.setResponseCallback(http.expectedStatuses(302, 429));
 
 export const options = {
   discardResponseBodies: true,
+  tags: { test_profile: TEST_PROFILE },
   summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
   stages: [
     {
-      duration: __ENV.WARMUP_DURATION || "30s",
-      target: integerFromEnv("WARMUP_VUS", 5, 1),
+      duration: __ENV.WARMUP_DURATION || LOAD_PROFILE.warmupDuration,
+      target: integerFromEnv("WARMUP_VUS", LOAD_PROFILE.warmupVUs, 1),
     },
     {
-      duration: __ENV.LOW_DURATION || "1m",
-      target: integerFromEnv("LOW_VUS", 20, 1),
+      duration: __ENV.LOW_DURATION || LOAD_PROFILE.lowDuration,
+      target: integerFromEnv("LOW_VUS", LOAD_PROFILE.lowVUs, 1),
     },
     {
-      duration: __ENV.HIGH_DURATION || "1m",
-      target: integerFromEnv("HIGH_VUS", 50, 1),
+      duration: __ENV.HIGH_DURATION || LOAD_PROFILE.highDuration,
+      target: integerFromEnv("HIGH_VUS", LOAD_PROFILE.highVUs, 1),
     },
     {
-      duration: __ENV.SUSTAIN_DURATION || "2m",
-      target: integerFromEnv("SUSTAIN_VUS", 50, 1),
+      duration: __ENV.SUSTAIN_DURATION || LOAD_PROFILE.sustainDuration,
+      target: integerFromEnv("SUSTAIN_VUS", LOAD_PROFILE.sustainVUs, 1),
     },
-    { duration: __ENV.RAMP_DOWN_DURATION || "30s", target: 0 },
+    {
+      duration: __ENV.RAMP_DOWN_DURATION || LOAD_PROFILE.rampDownDuration,
+      target: 0,
+    },
   ],
   thresholds: {
     http_req_failed: [`rate<${maxServerErrorRate}`],
@@ -92,7 +98,8 @@ export function setup() {
   console.log(
     `Negative redirect test: ${MISSING_ALIASES.length} missing, ` +
       `${INACTIVE_ALIASES.length} inactive, and ` +
-      `${EXPIRED_ALIASES.length} expired aliases.`,
+      `${EXPIRED_ALIASES.length} expired aliases. ` +
+      `Running the "${TEST_PROFILE}" profile.`,
   );
 }
 
@@ -187,6 +194,51 @@ function isUnavailableRedirect(location) {
     .split(/[?#]/, 1)[0]
     .replace(/\/+$/, "")
     .endsWith("/link-unavailable");
+}
+
+function negativeProfile(name) {
+  const profiles = {
+    smoke: {
+      warmupVUs: 1,
+      warmupDuration: "5s",
+      lowVUs: 2,
+      lowDuration: "10s",
+      highVUs: 5,
+      highDuration: "10s",
+      sustainVUs: 5,
+      sustainDuration: "15s",
+      rampDownDuration: "5s",
+    },
+    load: {
+      warmupVUs: 5,
+      warmupDuration: "15s",
+      lowVUs: 15,
+      lowDuration: "30s",
+      highVUs: 50,
+      highDuration: "45s",
+      sustainVUs: 50,
+      sustainDuration: "90s",
+      rampDownDuration: "15s",
+    },
+    stress: {
+      warmupVUs: 10,
+      warmupDuration: "15s",
+      lowVUs: 50,
+      lowDuration: "30s",
+      highVUs: 150,
+      highDuration: "45s",
+      sustainVUs: 150,
+      sustainDuration: "90s",
+      rampDownDuration: "15s",
+    },
+  };
+  const profile = profiles[name];
+  if (!profile) {
+    throw new Error(
+      `TEST_PROFILE must be smoke, load, or stress; received ${name}`,
+    );
+  }
+  return profile;
 }
 
 function integerFromEnv(name, fallback, minimum) {
