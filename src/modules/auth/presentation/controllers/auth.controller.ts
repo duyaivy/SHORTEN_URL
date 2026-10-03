@@ -88,10 +88,39 @@ export class AuthController {
 
   @Get("oauth")
   @ApiOperation({ summary: 'Login with Google OAuth', description: 'Exchange an authorization code from the Google OAuth flow for tokens' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Google login successful' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Google login successful; access & refresh tokens returned via cookies' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid authorization code' })
-  async loginWithGoogle(@Query() query: { code: string }) {
+  async loginWithGoogle(
+    @Query() query: { code: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const data = await this.loginWithGoogleUseCase.execute(query);
+
+    const accessExpiration =
+      this.configService.get<string>(
+        'ACCESS_TOKEN_EXPIRATION_TIME',
+      )!;
+    const refreshExpiration =
+      this.configService.get<string>(
+        'REFRESH_TOKEN_EXPIRATION_TIME',
+      )!;
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict" as const,
+      path: '/',
+    };
+
+    res.cookie("refresh_token", data.refreshToken, {
+      ...cookieOptions,
+      maxAge: ms(refreshExpiration as ms.StringValue),
+    });
+    res.cookie("access_token", data.accessToken, {
+      ...cookieOptions,
+      maxAge: ms(accessExpiration as ms.StringValue),
+    });
+
     return ServiceResponse.success("Login successful", data, HttpStatus.OK);
   }
 
