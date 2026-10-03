@@ -1,4 +1,4 @@
-# 🔗 ShortLink – URL Shortening & QR Management Platform (Backend)
+# 🔗 ShortLink – URL Shortening & QR Management Platform (Backend) 
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
