@@ -146,23 +146,27 @@ jobs:
             echo "Backend Node 1 deployed — tag: ${{ needs.build-and-push.outputs.image_tag }}"
 
   deploy-vps2:
-    name: Deploy Backend Node 2 to VPS 2
+    name: Deploy Backend Node 2 to VPS 2 (via VPS 1 Jump Host)
     runs-on: ubuntu-latest
     needs: build-and-push
     environment: production
 
     steps:
-      - name: SSH into VPS 2 and update Backend Node 2
+      - name: SSH into VPS 2 via VPS 1 Jump Host and update Backend Node 2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS2_HOST }}
           username: ${{ secrets.VPS2_USER }}
           key: ${{ secrets.VPS2_SSH_KEY }}
           port: ${{ secrets.VPS2_SSH_PORT || 22 }}
+          proxy_host: ${{ secrets.VPS1_HOST }}
+          proxy_username: ${{ secrets.VPS1_USER }}
+          proxy_key: ${{ secrets.VPS1_SSH_KEY }}
+          proxy_port: ${{ secrets.VPS1_SSH_PORT || 22 }}
           script: |
             set -euo pipefail
 
-            echo "[VPS2] Deploying Backend Node 2 — $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "[VPS2] Deploying Backend Node 2 via Jump Host — $(date '+%Y-%m-%d %H:%M:%S')"
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
               -u "${{ github.actor }}" --password-stdin
