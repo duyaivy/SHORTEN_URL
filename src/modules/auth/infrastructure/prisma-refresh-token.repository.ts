@@ -28,6 +28,14 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
         return this.mapToEntity(record);
     }
 
+    async rotate(oldHash: string, data: { tokenHash: string; userId: string; expiresAt: Date }): Promise<boolean> {
+        const result = await this.prisma.refreshToken.updateMany({
+            where: { tokenHash: oldHash, userId: data.userId, expiresAt: { gt: new Date() } },
+            data: { tokenHash: data.tokenHash, expiresAt: data.expiresAt },
+        });
+        return result.count === 1;
+    }
+
     async findByTokenHash(tokenHash: string): Promise<RefreshToken | null> {
         const record = await this.prisma.refreshToken.findUnique({
             where: { tokenHash },

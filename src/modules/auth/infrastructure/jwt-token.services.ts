@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { TokenPayload, TokenService } from "../application/ports/token";
 import { ConfigService } from "@nestjs/config";
 import { EnvironmentVariables } from "../../../shared/config/env.validation";
+import { randomUUID } from 'node:crypto';
 import * as jwt from 'jsonwebtoken';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class JWTTokenService implements TokenService {
   ) { }
   async decodeToken(token: string): Promise<TokenPayload> {
     const jwtSecret = this.configService.get('SECRET_OR_PUBLIC_JWT_KEY', { infer: true });
-    return jwt.verify(token, jwtSecret as string) as TokenPayload;
+    return jwt.verify(token, jwtSecret as string, { algorithms: ['HS256'] }) as TokenPayload;
   }
   async generateAccessToken(payload: TokenPayload): Promise<string> {
     const jwtSecret = this.configService.get('SECRET_OR_PUBLIC_JWT_KEY', { infer: true });
@@ -24,6 +25,7 @@ export class JWTTokenService implements TokenService {
     const jwtSecret = this.configService.get('SECRET_OR_PUBLIC_JWT_KEY', { infer: true });
     const expiresIn = this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME', { infer: true });
     return jwt.sign(payload, jwtSecret as string, {
+      jwtid: randomUUID(),
       expiresIn: expiresIn as jwt.SignOptions['expiresIn'],
     });
   }
@@ -37,7 +39,7 @@ export class JWTTokenService implements TokenService {
   async verifyToken(token: string): Promise<boolean> {
     const jwtSecret = this.configService.get('SECRET_OR_PUBLIC_JWT_KEY', { infer: true });
     try {
-      jwt.verify(token, jwtSecret as string);
+      jwt.verify(token, jwtSecret as string, { algorithms: ['HS256'] });
       return true;
     } catch (error) {
       return false;

@@ -44,14 +44,13 @@ import { AppController } from './app.controller';
               : undefined,
             level: isDev ? 'debug' : 'info',
             customSuccessMessage: (req: any, res: any, responseTime: number) =>
-              `[${req.method}] ${req.url} → ${res.statusCode} (${responseTime}ms)`,
+              `[${req.method}] ${req.url?.split('?')[0]} → ${res.statusCode} (${responseTime}ms)`,
             customErrorMessage: (req: any, res: any, err: any) =>
-              `[${req.method}] ${req.url} → ${res.statusCode} - ${err.message}`,
+              `[${req.method}] ${req.url?.split('?')[0]} → ${res.statusCode} - ${err.message}`,
             serializers: {
               req: (req: any) => ({
                 method: req.method,
-                url: req.url,
-                query: req.query,
+                url: req.url?.split('?')[0],
               }),
               res: (res: any) => ({
                 statusCode: res.statusCode,

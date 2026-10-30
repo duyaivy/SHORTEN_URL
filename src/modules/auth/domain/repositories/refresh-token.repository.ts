@@ -7,6 +7,8 @@ export abstract class RefreshTokenRepository {
         expiresAt: Date;
     }): Promise<RefreshToken>;
 
+    abstract rotate(oldHash: string, data: { tokenHash: string; userId: string; expiresAt: Date }): Promise<boolean>;
+
     abstract findByTokenHash(tokenHash: string): Promise<RefreshToken | null>;
 
     abstract deleteByTokenHash(tokenHash: string): Promise<void>;

@@ -1,29 +1,21 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { TokenService } from '../../../auth/application/ports/token';
+import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 
-/**
- * Optional JWT guard — does NOT throw if token is missing.
- * Sets req.userId if a valid token is present, otherwise continues.
- */
 @Injectable()
-export class OptionalJwtGuard implements CanActivate {
-  constructor(private readonly tokenService: TokenService) {}
+export class OptionalJwtGuard extends JwtAuthGuard {
+  constructor(tokenService: TokenService) { super(tokenService); }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
-    const token = req.cookies?.access_token;
-    if (!token) {
-      return true; // allow without auth
+    // Only an intentionally anonymous request may proceed without authentication.
+    // Cookie presence matters even when its value is empty/malformed.
+    const hasCredentials = Object.hasOwn(req.cookies ?? {}, 'access_token') ||
+      Object.hasOwn(req.cookies ?? {}, 'refresh_token');
+    if (!hasCredentials && req.headers['x-auth-intent'] !== 'required') {
+      delete req.userId;
+      return true;
     }
-    try {
-      const isValid = await this.tokenService.verifyToken(token);
-      if (isValid) {
-        const payload = await this.tokenService.decodeToken(token);
-        req.userId = payload.userId;
-      }
-    } catch {
-      // token invalid but we still allow the request
-    }
-    return true;
+    return super.canActivate(context);
   }
 }

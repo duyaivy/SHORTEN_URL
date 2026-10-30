@@ -36,7 +36,7 @@ export class GoogleOauthClient implements GoogleOAuth {
       return response.data;
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response) {
-        console.error("Google OAuth Token Error Details:", error.response.data);
+        console.error("Google OAuth Token Error Details:", error.response.status);
         throw new Error(
           `Google Token Request Failed: ${JSON.stringify(error.response.data)}`
         );
@@ -58,7 +58,7 @@ export class GoogleOauthClient implements GoogleOAuth {
       return response.data;
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response) {
-        console.error("Google User Profile Error Details:", error.response.data);
+        console.error("Google User Profile Error Details:", error.response.status);
         throw new Error(
           `Google Profile Request Failed: ${JSON.stringify(error.response.data)}`
         );
