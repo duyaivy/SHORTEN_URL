@@ -14,7 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
-import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ServiceResponse } from '../../../../shared/responses/service-response';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
@@ -48,6 +48,8 @@ export class ShortUrlController {
     private readonly getMyUrlsUseCase: GetMyUrlsUseCase,
   ) { }
 
+  @ApiHeader({ name: 'X-Auth-Intent', required: false, description: 'Set to required for account-owned creation, even if cookies have expired.' })
+  @ApiResponse({ status: 401, description: 'SESSION_REQUIRED: refresh the cookie session and retry once; no URL has been written.' })
   @Post()
   @Throttle({ create: { limit: 10, ttl: 60000 } })
   @UseGuards(OptionalJwtGuard)

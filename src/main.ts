@@ -7,13 +7,16 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { EnvironmentVariables } from './shared/config/env.validation';
+import { clientOrigin, mutationOriginGuard } from './shared/config/http-security';
 import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const configService = app.get(ConfigService<EnvironmentVariables, true>);
   app.use(cookieParser());
+  const allowedOrigin = clientOrigin(configService.get('CLIENT_URL', { infer: true }));
+  app.use(mutationOriginGuard(allowedOrigin));
   app.enableCors({
-    origin: [configService.get('CLIENT_URL', { infer: true }) || true],
+    origin: [allowedOrigin],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

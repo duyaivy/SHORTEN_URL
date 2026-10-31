@@ -74,16 +74,18 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
+      path: "/",
       maxAge: ms(refreshExpiration as ms.StringValue),
     });
     res.cookie("access_token", data.accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
+      path: "/",
       maxAge: ms(accessExpiration as ms.StringValue),
     });
 
-    return ServiceResponse.success("Login successful", data, HttpStatus.OK);
+    return ServiceResponse.success("Login successful", { user: data.user }, HttpStatus.OK);
   }
 
   @Get("oauth")
@@ -121,7 +123,7 @@ export class AuthController {
       maxAge: ms(accessExpiration as ms.StringValue),
     });
 
-    return ServiceResponse.success("Login successful", data, HttpStatus.OK);
+    return ServiceResponse.success("Login successful", { user: data.user }, HttpStatus.OK);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -159,16 +161,18 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
+      path: "/",
       maxAge: ms(refreshExpiration as ms.StringValue),
     });
     res.cookie("access_token", data.accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
+      path: "/",
       maxAge: ms(accessExpiration as ms.StringValue),
     });
 
-    return ServiceResponse.success("Token refreshed successfully", data, HttpStatus.OK);
+    return ServiceResponse.success("Token refreshed successfully", null, HttpStatus.OK);
   }
 
   @Delete('logout')
